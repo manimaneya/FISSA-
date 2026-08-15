@@ -2,20 +2,18 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>FISSA — Compare. Vote. Partage.</title>
 
   <meta
     name="description"
-    content="FISSA - plateforme de comparaison d'images et vidéos par vote."
+    content="FISSA — Compare deux créations, regarde, vote et partage."
   >
 
   <meta name="theme-color" content="#07111f">
 
   <link rel="manifest" href="./manifest.json">
-
   <link rel="stylesheet" href="./style.css">
 </head>
 
@@ -32,33 +30,22 @@
 </div>
 
 
-<header>
+<!-- ================= HEADER ================= -->
 
+<header>
   <nav class="nav">
 
     <div class="logo">
       <div class="logo-mark">F</div>
-      FISSA
+      <span>FISSA</span>
     </div>
 
     <div class="nav-links">
-
-      <button type="button" onclick="scrollToComparison()">
-        Comparer
-      </button>
-
-      <button type="button" onclick="openModal()">
-        Publier
-      </button>
-
-      <button type="button" onclick="scrollToPublished()">
-        Fiches
-      </button>
-
-      <button type="button" onclick="scrollToComments()">
-        Commentaires
-      </button>
-
+      <button onclick="scrollToFeed()">Actualité</button>
+      <button onclick="scrollToComparison()">Comparer</button>
+      <button onclick="scrollToStories()">Stories</button>
+      <button onclick="scrollToComments()">Commentaires</button>
+      <button onclick="openModal()">Publier</button>
     </div>
 
     <div class="account-area">
@@ -66,7 +53,6 @@
       <button
         id="loginButton"
         class="login-button"
-        type="button"
         onclick="openAuth('login')"
       >
         Connexion
@@ -75,7 +61,6 @@
       <button
         id="userAvatar"
         class="user-avatar hidden"
-        type="button"
         onclick="openProfile()"
       >
         U
@@ -84,24 +69,24 @@
     </div>
 
   </nav>
-
 </header>
 
 
 <main>
 
+<!-- ================= HERO ================= -->
 
 <section class="hero">
 
   <span class="hero-badge">
-    ⚡ NOUVELLE PLATEFORME DE VOTE
+    ⚡ FISSA V2 — ACTUALITÉ & COMPARAISON
   </span>
 
   <h1>FISSA</h1>
 
   <p>
-    Compare deux créations, regarde les vidéos ou les images,
-    vote pour ton favori, commente et partage.
+    Compare deux créations, regarde les vidéos,
+    vote pour A ou B, partage et participe à la communauté.
     <br>
     <strong>A ⚡ B — Le public décide.</strong>
   </p>
@@ -110,7 +95,6 @@
 
     <button
       class="create-btn"
-      type="button"
       onclick="openAuth('register')"
     >
       ＋ CRÉER UN COMPTE
@@ -118,10 +102,9 @@
 
     <button
       class="secondary-btn"
-      type="button"
-      onclick="scrollToComparison()"
+      onclick="scrollToFeed()"
     >
-      ⚡ COMMENCER À COMPARER
+      ▶ VOIR L'ACTUALITÉ
     </button>
 
   </div>
@@ -129,11 +112,381 @@
 </section>
 
 
+<!-- ================= STORIES ================= -->
+
+<section id="stories" class="stories-section">
+
+  <div class="section-title-row">
+
+    <div>
+      <span class="section-mini">NOUVEAU</span>
+      <h2>📖 Stories FISSA</h2>
+    </div>
+
+    <button
+      class="small-button"
+      onclick="showToast('Les Stories arrivent bientôt 🚀')"
+    >
+      ＋ Ajouter
+    </button>
+
+  </div>
+
+
+  <div class="stories">
+
+    <button
+      class="story add-story"
+      onclick="openModal()"
+    >
+      <div class="story-circle add-circle">＋</div>
+      <span>Ma Story</span>
+    </button>
+
+
+    <button
+      class="story"
+      onclick="openStory('A')"
+    >
+      <div class="story-circle story-a">
+        A
+      </div>
+      <span>Création A</span>
+    </button>
+
+
+    <button
+      class="story"
+      onclick="openStory('B')"
+    >
+      <div class="story-circle story-b">
+        B
+      </div>
+      <span>Création B</span>
+    </button>
+
+
+    <button
+      class="story"
+      onclick="openStory('FISSA')"
+    >
+      <div class="story-circle story-fissa">
+        F
+      </div>
+      <span>FISSA</span>
+    </button>
+
+  </div>
+
+</section>
+
+
+<!-- ================= FIL ACTUALITÉ ================= -->
+
+<section id="feed" class="feed-section">
+
+  <div class="section-title-row">
+
+    <div>
+      <span class="section-mini">FIL</span>
+      <h2>📰 Actualité</h2>
+    </div>
+
+    <span class="live-badge">
+      ● EN DIRECT
+    </span>
+
+  </div>
+
+
+  <div id="feedList" class="feed-list">
+
+
+    <!-- PUBLICATION A -->
+
+    <article class="feed-post">
+
+      <div class="post-header">
+
+        <div class="post-user">
+
+          <div class="post-avatar avatar-a">
+            A
+          </div>
+
+          <div>
+            <strong>Utilisateur A</strong>
+            <small>
+              Création originale • À l'instant
+            </small>
+          </div>
+
+        </div>
+
+        <span class="post-letter blue-text">A</span>
+
+      </div>
+
+
+      <div class="vertical-media">
+
+        <div class="media-top-label">
+          <span>🎬 VIDÉO A</span>
+          <span class="duration">0:60</span>
+        </div>
+
+
+        <video
+          id="feedVideoA"
+          class="feed-video"
+          playsinline
+          preload="metadata"
+        ></video>
+
+
+        <img
+          id="feedImageA"
+          class="feed-image"
+          alt="Publication A"
+        >
+
+
+        <div
+          id="feedPlaceholderA"
+          class="feed-placeholder"
+        >
+          <div>🎬</div>
+          <p>La publication A apparaîtra ici</p>
+        </div>
+
+
+        <div class="video-center-control">
+
+          <button
+            id="playA"
+            class="play-button"
+            onclick="toggleVideo('A')"
+          >
+            ▶
+          </button>
+
+        </div>
+
+
+        <div class="video-bottom-controls">
+
+          <button onclick="toggleVideo('A')">
+            <span id="playIconA">▶</span>
+          </button>
+
+          <div class="progress-area">
+            <div class="progress-bar">
+              <div id="progressA" class="progress-value"></div>
+            </div>
+          </div>
+
+          <span id="timeA" class="video-time">
+            0:00 / 1:00
+          </span>
+
+          <button onclick="toggleMute('A')">
+            <span id="soundA">🔊</span>
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <div class="post-content">
+
+        <h3>Création A</h3>
+
+        <p>
+          Découvrez cette création et votez
+          pour votre favori.
+        </p>
+
+      </div>
+
+
+      <div class="post-actions">
+
+        <button
+          class="post-action like"
+          onclick="vote('A', this)"
+        >
+          ❤️ <span>J'aime</span>
+          <b id="likesFeedA">0</b>
+        </button>
+
+        <button
+          class="post-action"
+          onclick="commentFor('A')"
+        >
+          💬 Commenter
+        </button>
+
+        <button
+          class="post-action"
+          onclick="sharePost('A')"
+        >
+          ↗ Partager
+        </button>
+
+      </div>
+
+    </article>
+
+
+
+    <!-- PUBLICATION B -->
+
+    <article class="feed-post">
+
+      <div class="post-header">
+
+        <div class="post-user">
+
+          <div class="post-avatar avatar-b">
+            B
+          </div>
+
+          <div>
+            <strong>Utilisateur B</strong>
+            <small>
+              Création originale • À l'instant
+            </small>
+          </div>
+
+        </div>
+
+        <span class="post-letter red-text">B</span>
+
+      </div>
+
+
+      <div class="vertical-media">
+
+        <div class="media-top-label">
+          <span>🎬 VIDÉO B</span>
+          <span class="duration">0:60</span>
+        </div>
+
+
+        <video
+          id="feedVideoB"
+          class="feed-video"
+          playsinline
+          preload="metadata"
+        ></video>
+
+
+        <img
+          id="feedImageB"
+          class="feed-image"
+          alt="Publication B"
+        >
+
+
+        <div
+          id="feedPlaceholderB"
+          class="feed-placeholder"
+        >
+          <div>🖼️</div>
+          <p>La publication B apparaîtra ici</p>
+        </div>
+
+
+        <div class="video-center-control">
+
+          <button
+            id="playB"
+            class="play-button"
+            onclick="toggleVideo('B')"
+          >
+            ▶
+          </button>
+
+        </div>
+
+
+        <div class="video-bottom-controls">
+
+          <button onclick="toggleVideo('B')">
+            <span id="playIconB">▶</span>
+          </button>
+
+          <div class="progress-area">
+            <div class="progress-bar">
+              <div id="progressB" class="progress-value"></div>
+            </div>
+          </div>
+
+          <span id="timeB" class="video-time">
+            0:00 / 1:00
+          </span>
+
+          <button onclick="toggleMute('B')">
+            <span id="soundB">🔊</span>
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <div class="post-content">
+
+        <h3>Création B</h3>
+
+        <p>
+          Compare cette création avec A
+          et donne ton vote.
+        </p>
+
+      </div>
+
+
+      <div class="post-actions">
+
+        <button
+          class="post-action like"
+          onclick="vote('B', this)"
+        >
+          ❤️ <span>J'aime</span>
+          <b id="likesFeedB">0</b>
+        </button>
+
+        <button
+          class="post-action"
+          onclick="commentFor('B')"
+        >
+          💬 Commenter
+        </button>
+
+        <button
+          class="post-action"
+          onclick="sharePost('B')"
+        >
+          ↗ Partager
+        </button>
+
+      </div>
+
+    </article>
+
+  </div>
+
+</section>
+
+
+<!-- ================= PUBLICATION ================= -->
+
 <div class="create-area">
 
   <button
     class="create-btn"
-    type="button"
     onclick="openModal()"
   >
     ＋ CRÉER UNE COMPARAISON
@@ -142,413 +495,265 @@
 </div>
 
 
+<!-- ================= COMPARAISON ================= -->
+
 <section
   id="comparison"
   class="comparison"
 >
 
+  <!-- A -->
 
-<!-- =========================
-     A
-========================= -->
+  <div class="contestant">
 
-<div class="contestant contestant-a">
+    <div class="media-card">
 
-  <div class="media-card" id="cardA">
+      <div class="media-head">
 
-    <div class="media-head">
+        <div class="user">
 
-      <div class="user">
+          <div class="avatar">
+            A
+          </div>
 
-        <div class="avatar">
-          A
+          <div>
+            <strong>Utilisateur A</strong>
+            <small>Création originale</small>
+          </div>
+
         </div>
 
-        <div>
-          <strong id="userNameA">
-            Utilisateur A
-          </strong>
-
-          <small>
-            Création originale
-          </small>
-        </div>
-
-      </div>
-
-      <div class="letter blue-text">
-        A
-      </div>
-
-    </div>
-
-
-    <div class="media" id="mediaAreaA">
-
-      <img
-        id="imageA"
-        alt="Création A"
-      >
-
-      <video
-        id="videoA"
-        playsinline
-        preload="metadata"
-      ></video>
-
-
-      <div
-        id="placeholderA"
-        class="media-placeholder"
-      >
-
-        <div class="icon">
-          🎬
-        </div>
-
-        <p>
-          Ajoute une image ou une vidéo
-        </p>
+        <div class="letter blue-text">A</div>
 
       </div>
 
 
-      <button
-        id="playA"
-        class="big-play hidden"
-        type="button"
-        onclick="toggleVideo('A')"
-        aria-label="Lire A"
-      >
-        ▶
-      </button>
+      <div class="media">
+
+        <img id="imageA" alt="Création A">
+
+        <video
+          id="videoA"
+          playsinline
+          preload="metadata"
+        ></video>
 
 
-      <div
-        id="videoControlsA"
-        class="video-controls hidden"
-      >
+        <div
+          id="placeholderA"
+          class="media-placeholder"
+        >
+
+          <div class="icon">🎬</div>
+
+          <p>
+            Ajoute une image ou une vidéo
+          </p>
+
+        </div>
+
 
         <button
-          type="button"
+          id="comparePlayA"
+          class="compare-play"
           onclick="toggleVideo('A')"
-          id="playSmallA"
         >
           ▶
         </button>
 
-        <div class="progress-wrap">
 
-          <div
-            id="progressA"
-            class="progress"
-          ></div>
+        <label class="upload-label">
 
-        </div>
+          📁 Choisir un fichier
 
-        <span id="timeA">
-          00:00 / 01:00
-        </span>
+          <input
+            type="file"
+            accept="image/*,video/*"
+            hidden
+            onchange="loadMedia(event,'A')"
+          >
 
-        <button
-          type="button"
-          onclick="toggleMute('A')"
-          id="muteA"
-        >
-          🔊
-        </button>
+        </label>
 
       </div>
 
 
-      <label class="upload-label">
+      <div class="media-info">
 
-        📁 Choisir un fichier
-
-        <input
-          type="file"
-          accept="image/*,video/*"
-          hidden
-          onchange="loadMedia(event,'A')"
-        >
-
-      </label>
-
-    </div>
-
-
-    <div class="media-info">
-
-      <div class="media-title-line">
-
-        <h3 id="titleA">
-          Création A
-        </h3>
-
-        <span class="analog-badge blue-badge">
-          A
-        </span>
-
-      </div>
-
-      <p id="descriptionA">
-        Présente ta création et laisse
-        le public décider de son niveau.
-      </p>
-
-    </div>
-
-
-    <div class="actions">
-
-      <button
-        class="action-btn like"
-        type="button"
-        onclick="vote('A', this)"
-      >
-        ❤️ J'aime
-        <span class="count" id="likesA">0</span>
-      </button>
-
-      <button
-        class="action-btn"
-        type="button"
-        onclick="commentFor('A')"
-      >
-        💬 Commenter
-      </button>
-
-      <button
-        class="action-btn"
-        type="button"
-        onclick="sharePost('A')"
-      >
-        ↗ Partager
-      </button>
-
-    </div>
-
-  </div>
-
-</div>
-
-
-<!-- =========================
-     VS
-========================= -->
-
-<div class="vs">
-
-  <div class="vs-line"></div>
-
-  <div class="vs-circle">
-    <span>VS</span>
-  </div>
-
-  <button
-    class="sync-button"
-    type="button"
-    onclick="toggleBothVideos()"
-    id="syncButton"
-  >
-    ▶ A + B
-  </button>
-
-  <div class="vs-arrow">
-    ⇄
-  </div>
-
-  <div class="vs-line"></div>
-
-</div>
-
-
-<!-- =========================
-     B
-========================= -->
-
-<div class="contestant contestant-b">
-
-  <div class="media-card" id="cardB">
-
-    <div class="media-head">
-
-      <div class="user">
-
-        <div class="avatar avatar-red">
-          B
-        </div>
-
-        <div>
-          <strong id="userNameB">
-            Utilisateur B
-          </strong>
-
-          <small>
-            Création originale
-          </small>
-        </div>
-
-      </div>
-
-      <div class="letter red-text">
-        B
-      </div>
-
-    </div>
-
-
-    <div class="media" id="mediaAreaB">
-
-      <img
-        id="imageB"
-        alt="Création B"
-      >
-
-      <video
-        id="videoB"
-        playsinline
-        preload="metadata"
-      ></video>
-
-
-      <div
-        id="placeholderB"
-        class="media-placeholder"
-      >
-
-        <div class="icon">
-          🖼️
-        </div>
+        <h3>Création A</h3>
 
         <p>
-          Ajoute une image ou une vidéo
+          Présente ta création et laisse
+          le public décider.
         </p>
 
       </div>
 
 
-      <button
-        id="playB"
-        class="big-play hidden"
-        type="button"
-        onclick="toggleVideo('B')"
-        aria-label="Lire B"
-      >
-        ▶
-      </button>
-
-
-      <div
-        id="videoControlsB"
-        class="video-controls hidden"
-      >
+      <div class="actions">
 
         <button
-          type="button"
-          onclick="toggleVideo('B')"
-          id="playSmallB"
+          class="action-btn like"
+          onclick="vote('A', this)"
         >
-          ▶
+          ❤️ J'aime
+          <span class="count" id="likesA">0</span>
         </button>
 
-        <div class="progress-wrap">
-
-          <div
-            id="progressB"
-            class="progress"
-          ></div>
-
-        </div>
-
-        <span id="timeB">
-          00:00 / 01:00
-        </span>
+        <button
+          class="action-btn"
+          onclick="commentFor('A')"
+        >
+          💬 Commenter
+        </button>
 
         <button
-          type="button"
-          onclick="toggleMute('B')"
-          id="muteB"
+          class="action-btn"
+          onclick="sharePost('A')"
         >
-          🔊
+          ↗ Partager
         </button>
 
       </div>
-
-
-      <label class="upload-label">
-
-        📁 Choisir un fichier
-
-        <input
-          type="file"
-          accept="image/*,video/*"
-          hidden
-          onchange="loadMedia(event,'B')"
-        >
-
-      </label>
-
-    </div>
-
-
-    <div class="media-info">
-
-      <div class="media-title-line">
-
-        <h3 id="titleB">
-          Création B
-        </h3>
-
-        <span class="analog-badge red-badge">
-          B
-        </span>
-
-      </div>
-
-      <p id="descriptionB">
-        Compare cette création avec A
-        et donne ton vote.
-      </p>
-
-    </div>
-
-
-    <div class="actions">
-
-      <button
-        class="action-btn like"
-        type="button"
-        onclick="vote('B', this)"
-      >
-        ❤️ J'aime
-        <span class="count" id="likesB">0</span>
-      </button>
-
-      <button
-        class="action-btn"
-        type="button"
-        onclick="commentFor('B')"
-      >
-        💬 Commenter
-      </button>
-
-      <button
-        class="action-btn"
-        type="button"
-        onclick="sharePost('B')"
-      >
-        ↗ Partager
-      </button>
 
     </div>
 
   </div>
 
-</div>
+
+  <!-- VS -->
+
+  <div class="vs">
+
+    <div class="vs-circle">VS</div>
+
+    <div class="vs-arrow">⇄</div>
+
+  </div>
+
+
+  <!-- B -->
+
+  <div class="contestant">
+
+    <div class="media-card">
+
+      <div class="media-head">
+
+        <div class="user">
+
+          <div class="avatar avatar-red">
+            B
+          </div>
+
+          <div>
+            <strong>Utilisateur B</strong>
+            <small>Création originale</small>
+          </div>
+
+        </div>
+
+        <div class="letter red-text">B</div>
+
+      </div>
+
+
+      <div class="media">
+
+        <img id="imageB" alt="Création B">
+
+        <video
+          id="videoB"
+          playsinline
+          preload="metadata"
+        ></video>
+
+
+        <div
+          id="placeholderB"
+          class="media-placeholder"
+        >
+
+          <div class="icon">🖼️</div>
+
+          <p>
+            Ajoute une image ou une vidéo
+          </p>
+
+        </div>
+
+
+        <button
+          id="comparePlayB"
+          class="compare-play"
+          onclick="toggleVideo('B')"
+        >
+          ▶
+        </button>
+
+
+        <label class="upload-label">
+
+          📁 Choisir un fichier
+
+          <input
+            type="file"
+            accept="image/*,video/*"
+            hidden
+            onchange="loadMedia(event,'B')"
+          >
+
+        </label>
+
+      </div>
+
+
+      <div class="media-info">
+
+        <h3>Création B</h3>
+
+        <p>
+          Compare cette création avec A
+          et donne ton vote.
+        </p>
+
+      </div>
+
+
+      <div class="actions">
+
+        <button
+          class="action-btn like"
+          onclick="vote('B', this)"
+        >
+          ❤️ J'aime
+          <span class="count" id="likesB">0</span>
+        </button>
+
+        <button
+          class="action-btn"
+          onclick="commentFor('B')"
+        >
+          💬 Commenter
+        </button>
+
+        <button
+          class="action-btn"
+          onclick="sharePost('B')"
+        >
+          ↗ Partager
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
 
 </section>
 
+
+<!-- ================= SCORE ================= -->
 
 <section class="score-box">
 
@@ -566,6 +771,7 @@
 
   </div>
 
+
   <div class="score-bar">
 
     <div id="scoreA" class="score-a"></div>
@@ -577,81 +783,14 @@
 </section>
 
 
-<!-- =========================
-     FICHES PUBLIÉES
-========================= -->
-
-<section
-  id="published"
-  class="published-section"
->
-
-  <div class="section-heading">
-
-    <div>
-      <span class="section-kicker">
-        ARCHIVE FISSA
-      </span>
-
-      <h2>
-        📚 Fiches publiées
-      </h2>
-
-      <p>
-        Retrouve les comparaisons déjà publiées.
-      </p>
-    </div>
-
-    <span
-      id="publicationCount"
-      class="publication-count"
-    >
-      0 fiche
-    </span>
-
-  </div>
-
-
-  <div
-    id="publishedList"
-    class="published-list"
-  ></div>
-
-
-  <div
-    id="emptyPublished"
-    class="empty-published"
-  >
-
-    <div>
-      📭
-    </div>
-
-    <strong>
-      Aucune fiche publiée
-    </strong>
-
-    <span>
-      Crée ta première comparaison avec le bouton Publier.
-    </span>
-
-  </div>
-
-</section>
-
-
-<!-- =========================
-     COMMENTAIRES
-========================= -->
+<!-- ================= COMMENTS ================= -->
 
 <section
   id="comments"
   class="comments-section"
 >
 
-  <h2>
-    💬 Discussion FISSA
-  </h2>
+  <h2>💬 Discussion FISSA</h2>
 
   <form
     class="comment-form"
@@ -672,6 +811,7 @@
 
   </form>
 
+
   <div
     id="commentsList"
     class="comments"
@@ -681,7 +821,7 @@
 
       <strong>FISSA</strong>
 
-      Bienvenue sur la première comparaison !
+      Bienvenue sur la nouvelle actualité FISSA !
 
     </div>
 
@@ -690,9 +830,7 @@
 </section>
 
 
-<!-- =========================
-     PROFIL
-========================= -->
+<!-- ================= PROFILE ================= -->
 
 <section
   id="profilePage"
@@ -707,9 +845,7 @@
     Utilisateur FISSA
   </h2>
 
-  <p id="profileEmail">
-    —
-  </p>
+  <p id="profileEmail">—</p>
 
   <p id="profileUid" class="profile-uid">
     —
@@ -721,7 +857,6 @@
 
   <button
     class="logout-button"
-    type="button"
     onclick="logout()"
   >
     🚪 Déconnexion
@@ -732,61 +867,29 @@
 </main>
 
 
-<!-- =========================
-     MODAL PUBLICATION
-========================= -->
+<!-- ================= PUBLICATION MODAL ================= -->
 
 <div id="modal" class="modal">
 
   <div class="modal-box">
 
-    <h2>
-      🚀 Nouvelle comparaison
-    </h2>
-
-    <p class="modal-help">
-      Prépare ta fiche. Les médias A et B sont ceux
-      sélectionnés dans la comparaison.
-    </p>
+    <h2>🚀 Nouvelle comparaison</h2>
 
     <input
       id="titleInput"
       type="text"
-      maxlength="100"
       placeholder="Titre de la comparaison"
     >
 
     <textarea
       id="descriptionInput"
-      maxlength="300"
       placeholder="Petite description..."
     ></textarea>
 
 
-    <div class="publish-preview">
-
-      <div class="preview-item">
-        <span class="preview-letter blue-preview">
-          A
-        </span>
-        <span id="previewA">
-          Média A
-        </span>
-      </div>
-
-      <div class="preview-vs">
-        VS
-      </div>
-
-      <div class="preview-item">
-        <span class="preview-letter red-preview">
-          B
-        </span>
-        <span id="previewB">
-          Média B
-        </span>
-      </div>
-
+    <div class="modal-file-info">
+      📱 Après publication, les médias
+      pourront être ajoutés dans A et B.
     </div>
 
 
@@ -794,7 +897,6 @@
 
       <button
         class="cancel"
-        type="button"
         onclick="closeModal()"
       >
         Annuler
@@ -802,10 +904,9 @@
 
       <button
         class="publish"
-        type="button"
         onclick="publishComparison()"
       >
-        🚀 Publier la fiche
+        Publier
       </button>
 
     </div>
@@ -815,9 +916,33 @@
 </div>
 
 
-<!-- =========================
-     AUTH
-========================= -->
+<!-- ================= STORY MODAL ================= -->
+
+<div id="storyModal" class="story-modal">
+
+  <button
+    class="story-close"
+    onclick="closeStory()"
+  >
+    ×
+  </button>
+
+  <div class="story-viewer">
+
+    <div class="story-progress">
+      <div></div>
+    </div>
+
+    <div id="storyContent" class="story-content">
+      FISSA
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ================= AUTH ================= -->
 
 <div id="authModal" class="modal">
 
@@ -825,15 +950,12 @@
 
     <button
       class="close"
-      type="button"
       onclick="closeAuth()"
     >
       ×
     </button>
 
-    <div class="auth-logo">
-      F
-    </div>
+    <div class="auth-logo">F</div>
 
     <h2 id="authTitle">
       Connexion FISSA
@@ -869,7 +991,6 @@
     <button
       id="authSubmit"
       class="primary-auth-btn"
-      type="button"
       onclick="submitAuth()"
     >
       Se connecter
@@ -878,7 +999,6 @@
     <button
       id="switchAuth"
       class="switch-auth"
-      type="button"
       onclick="switchAuth()"
     >
       Créer un nouveau compte
@@ -888,6 +1008,8 @@
 
 </div>
 
+
+<!-- ================= TOAST ================= -->
 
 <div id="toast" class="toast">
   Action effectuée
