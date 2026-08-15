@@ -1,8 +1,8 @@
-// ======================================================
-// FISSA — SCRIPT.JS
-// Système social : Actualité + Story + Comparaison A/B
-// Firebase Auth + Publications + Profil + AI FISSA
-// ======================================================
+// ============================================================
+// FISSA — SCRIPT.JS COMPLET
+// Fil actualité + publication + A/B + vidéos + stories
+// Profil + likes + commentaires + partage + FISSA AI
+// ============================================================
 
 import {
   auth,
@@ -14,9 +14,9 @@ import {
 } from "./firebase.js";
 
 
-// ======================================================
+// ============================================================
 // VARIABLES
-// ======================================================
+// ============================================================
 
 let authMode = "login";
 let toastTimer = null;
@@ -26,39 +26,76 @@ let likes = {
   B: 0
 };
 
-let currentFilter = "actualite";
+let currentCommentSide = "A";
 
-let publications = [];
+let publications =
+  JSON.parse(
+    localStorage.getItem("fissa_publications") || "[]"
+  );
 
-let stories = [];
+let stories =
+  JSON.parse(
+    localStorage.getItem("fissa_stories") || "[]"
+  );
 
 
-// ======================================================
+// ============================================================
 // UTILITAIRES
-// ======================================================
+// ============================================================
 
-function $(id) {
-  return document.getElementById(id);
+function savePublications() {
+
+  localStorage.setItem(
+    "fissa_publications",
+    JSON.stringify(publications)
+  );
+}
+
+
+function saveStories() {
+
+  localStorage.setItem(
+    "fissa_stories",
+    JSON.stringify(stories)
+  );
 }
 
 
 function escapeHTML(text) {
 
-  const div = document.createElement("div");
-
-  div.textContent = text || "";
-
-  return div.innerHTML;
+  return String(text || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 
-// ======================================================
+function getCurrentUserName() {
+
+  const user = auth.currentUser;
+
+  if (!user) {
+    return "Visiteur";
+  }
+
+  return (
+    user.displayName ||
+    user.email ||
+    "Utilisateur FISSA"
+  );
+}
+
+
+// ============================================================
 // TOAST
-// ======================================================
+// ============================================================
 
 window.showToast = function(message) {
 
-  const toast = $("toast");
+  const toast =
+    document.getElementById("toast");
 
   if (!toast) return;
 
@@ -72,27 +109,32 @@ window.showToast = function(message) {
 
     toast.classList.remove("show");
 
-  }, 2800);
+  }, 2500);
 };
 
 
-// ======================================================
+// ============================================================
 // AUTHENTIFICATION
-// ======================================================
+// ============================================================
 
 window.openAuth = function(mode = "login") {
 
   authMode = mode;
 
-  const modal = $("authModal");
+  const modal =
+    document.getElementById("authModal");
 
-  const title = $("authTitle");
+  const title =
+    document.getElementById("authTitle");
 
-  const name = $("authName");
+  const name =
+    document.getElementById("authName");
 
-  const submit = $("authSubmit");
+  const submit =
+    document.getElementById("authSubmit");
 
-  const switchButton = $("switchAuth");
+  const switchButton =
+    document.getElementById("switchAuth");
 
   if (!modal) return;
 
@@ -129,12 +171,11 @@ window.openAuth = function(mode = "login") {
 
 window.closeAuth = function() {
 
-  const modal = $("authModal");
+  const modal =
+    document.getElementById("authModal");
 
   if (modal) {
-
     modal.classList.remove("show");
-
   }
 };
 
@@ -148,22 +189,24 @@ window.switchAuth = function() {
   } else {
 
     openAuth("login");
-
   }
 };
 
 
-// ======================================================
-// INSCRIPTION / CONNEXION
-// ======================================================
+// ============================================================
+// CONNEXION / INSCRIPTION
+// ============================================================
 
 window.submitAuth = async function() {
 
-  const nameInput = $("authName");
-  const emailInput = $("authEmail");
-  const passwordInput = $("authPassword");
+  const nameInput =
+    document.getElementById("authName");
 
-  if (!emailInput || !passwordInput) return;
+  const emailInput =
+    document.getElementById("authEmail");
+
+  const passwordInput =
+    document.getElementById("authPassword");
 
   const name =
     nameInput.value.trim();
@@ -176,18 +219,14 @@ window.submitAuth = async function() {
 
   if (!email) {
 
-    showToast(
-      "Entre ton adresse e-mail."
-    );
+    showToast("Entre ton adresse e-mail.");
 
     return;
   }
 
   if (!password) {
 
-    showToast(
-      "Entre ton mot de passe."
-    );
+    showToast("Entre ton mot de passe.");
 
     return;
   }
@@ -201,7 +240,6 @@ window.submitAuth = async function() {
     return;
   }
 
-
   try {
 
     if (authMode === "register") {
@@ -213,7 +251,6 @@ window.submitAuth = async function() {
           password
         );
 
-
       if (name) {
 
         await updateProfile(
@@ -222,17 +259,11 @@ window.submitAuth = async function() {
             displayName: name
           }
         );
-
       }
 
-
       showToast(
-        "Compte FISSA créé 🎉"
+        "Compte FISSA créé avec succès 🎉"
       );
-
-      closeAuth();
-
-      clearAuthForm();
 
     } else {
 
@@ -245,29 +276,211 @@ window.submitAuth = async function() {
       showToast(
         "Connexion réussie ✅"
       );
-
-      closeAuth();
-
-      clearAuthForm();
-
     }
+
+    closeAuth();
+
+    clearAuthForm();
 
   } catch (error) {
 
-    console.error(
-      "Firebase Auth:",
-      error
-    );
+    console.error(error);
 
     showFirebaseError(error);
-
   }
 };
 
 
-// ======================================================
+window.logout = async function() {
+
+  try {
+
+    await signOut(auth);
+
+    showToast(
+      "Déconnexion réussie."
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    showToast(
+      "Erreur de déconnexion."
+    );
+  }
+};
+
+
+function clearAuthForm() {
+
+  const name =
+    document.getElementById("authName");
+
+  const email =
+    document.getElementById("authEmail");
+
+  const password =
+    document.getElementById("authPassword");
+
+  if (name) name.value = "";
+
+  if (email) email.value = "";
+
+  if (password) password.value = "";
+}
+
+
+// ============================================================
+// FIREBASE ÉTAT UTILISATEUR
+// ============================================================
+
+onAuthStateChanged(
+  auth,
+  user => {
+
+    updateInterface(user);
+
+    renderNewsFeed();
+
+  }
+);
+
+
+function updateInterface(user) {
+
+  const loginButton =
+    document.getElementById("loginButton");
+
+  const userAvatar =
+    document.getElementById("userAvatar");
+
+  const profilePage =
+    document.getElementById("profilePage");
+
+  const profileName =
+    document.getElementById("profileName");
+
+  const profileEmail =
+    document.getElementById("profileEmail");
+
+  const profileUid =
+    document.getElementById("profileUid");
+
+  if (!loginButton || !userAvatar) {
+    return;
+  }
+
+  if (user) {
+
+    loginButton.classList.add("hidden");
+
+    userAvatar.classList.remove("hidden");
+
+    const letter = (
+      user.displayName ||
+      user.email ||
+      "U"
+    )
+      .charAt(0)
+      .toUpperCase();
+
+    userAvatar.textContent =
+      letter;
+
+    if (profileName) {
+
+      profileName.textContent =
+        user.displayName ||
+        "Utilisateur FISSA";
+    }
+
+    if (profileEmail) {
+
+      profileEmail.textContent =
+        user.email || "";
+    }
+
+    if (profileUid) {
+
+      profileUid.textContent =
+        "ID utilisateur : " +
+        user.uid;
+    }
+
+  } else {
+
+    loginButton.classList.remove("hidden");
+
+    userAvatar.classList.add("hidden");
+
+    if (profilePage) {
+
+      profilePage.classList.add(
+        "hidden"
+      );
+    }
+  }
+}
+
+
+// ============================================================
+// PROFIL
+// ============================================================
+
+window.openProfile = function() {
+
+  const user =
+    auth.currentUser;
+
+  if (!user) {
+
+    openAuth("login");
+
+    return;
+  }
+
+  const profile =
+    document.getElementById(
+      "profilePage"
+    );
+
+  if (!profile) return;
+
+  profile.classList.remove(
+    "hidden"
+  );
+
+  profile.scrollIntoView({
+    behavior: "smooth"
+  });
+};
+
+
+window.backHome = function() {
+
+  const profile =
+    document.getElementById(
+      "profilePage"
+    );
+
+  if (profile) {
+
+    profile.classList.add(
+      "hidden"
+    );
+  }
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+};
+
+
+// ============================================================
 // ERREURS FIREBASE
-// ======================================================
+// ============================================================
 
 function showFirebaseError(error) {
 
@@ -343,841 +556,38 @@ function showFirebaseError(error) {
 }
 
 
-// ======================================================
-// NETTOYER AUTH
-// ======================================================
-
-function clearAuthForm() {
-
-  if ($("authName"))
-    $("authName").value = "";
-
-  if ($("authEmail"))
-    $("authEmail").value = "";
-
-  if ($("authPassword"))
-    $("authPassword").value = "";
-}
-
-
-// ======================================================
-// DÉCONNEXION
-// ======================================================
-
-window.logout = async function() {
-
-  try {
-
-    await signOut(auth);
-
-    showToast(
-      "Déconnexion réussie."
-    );
-
-    showPage("home");
-
-  } catch (error) {
-
-    console.error(error);
-
-    showToast(
-      "Erreur lors de la déconnexion."
-    );
-  }
-};
-
-
-// ======================================================
-// ÉTAT UTILISATEUR
-// ======================================================
-
-onAuthStateChanged(
-  auth,
-  user => {
-
-    updateInterface(user);
-
-  }
-);
-
-
-function updateInterface(user) {
-
-  const loginButton =
-    $("loginButton");
-
-  const userAvatar =
-    $("userAvatar");
-
-  if (!loginButton || !userAvatar)
-    return;
-
-
-  if (user) {
-
-    loginButton.classList.add(
-      "hidden"
-    );
-
-    userAvatar.classList.remove(
-      "hidden"
-    );
-
-
-    const letter = (
-      user.displayName ||
-      user.email ||
-      "U"
-    )
-      .charAt(0)
-      .toUpperCase();
-
-
-    userAvatar.textContent =
-      letter;
-
-
-    if ($("profileName")) {
-
-      $("profileName").textContent =
-        user.displayName ||
-        "Utilisateur FISSA";
-
-    }
-
-
-    if ($("profileEmail")) {
-
-      $("profileEmail").textContent =
-        user.email || "";
-
-    }
-
-
-    if ($("profileUid")) {
-
-      $("profileUid").textContent =
-        "ID utilisateur : " +
-        user.uid;
-
-    }
-
-  } else {
-
-    loginButton.classList.remove(
-      "hidden"
-    );
-
-    userAvatar.classList.add(
-      "hidden"
-    );
-
-  }
-}
-
-
-// ======================================================
-// PROFIL
-// ======================================================
-
-window.openProfile = function() {
-
-  const user = auth.currentUser;
-
-  if (!user) {
-
-    openAuth("login");
-
-    return;
-  }
-
-  showPage("profile");
-
-};
-
-
-window.updateProfilePhoto =
-function(event) {
-
-  const file =
-    event.target.files[0];
-
-  if (!file) return;
-
-  if (!file.type.startsWith("image/")) {
-
-    showToast(
-      "Choisis une image."
-    );
-
-    return;
-  }
-
-  const url =
-    URL.createObjectURL(file);
-
-  const avatar =
-    $("profilePhoto");
-
-  if (avatar) {
-
-    avatar.src = url;
-
-    avatar.classList.remove(
-      "hidden"
-    );
-
-  }
-
-  showToast(
-    "Photo de profil ajoutée 📸"
-  );
-};
-
-
-// ======================================================
-// NAVIGATION DES PAGES
-// ======================================================
-
-function showPage(page) {
-
-  const sections =
-    document.querySelectorAll(
-      "[data-page]"
-    );
-
-  sections.forEach(section => {
-
-    section.classList.add(
-      "hidden"
-    );
-
-  });
-
-
-  const target =
-    document.querySelector(
-      `[data-page="${page}"]`
-    );
-
-  if (target) {
-
-    target.classList.remove(
-      "hidden"
-    );
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth"
-    });
-
-  }
-}
-
-
-window.goBack = function() {
-
-  showPage("home");
-
-};
-
-
-window.showHome = function() {
-
-  showPage("home");
-
-};
-
-
-window.showProfile = function() {
-
-  openProfile();
-
-};
-
-
-// ======================================================
-// FILTRES
-// ======================================================
-
-window.setFeedFilter =
-function(filter) {
-
-  currentFilter =
-    filter;
-
-  document
-    .querySelectorAll(
-      ".feed-filter"
-    )
-    .forEach(button => {
-
-      button.classList.remove(
-        "active"
-      );
-
-    });
-
-
-  const active =
-    document.querySelector(
-      `[data-filter="${filter}"]`
-    );
-
-  if (active) {
-
-    active.classList.add(
-      "active"
-    );
-
-  }
-
-
-  renderFeed();
-
-  showToast(
-    filter === "story"
-      ? "Stories sélectionnées"
-      : "Actualités sélectionnées"
-  );
-};
-
-
-// ======================================================
-// PUBLICATION
-// ======================================================
-
-window.openModal = function() {
-
-  const modal = $("modal");
-
-  if (!modal) return;
-
-  modal.classList.add("show");
-
-};
-
-
-window.closeModal = function() {
-
-  const modal = $("modal");
-
-  if (modal) {
-
-    modal.classList.remove(
-      "show"
-    );
-
-  }
-};
-
-
-// ======================================================
-// CRÉER UNE PUBLICATION
-// ======================================================
-
-window.publishComparison =
-function() {
-
-  const titleInput =
-    $("titleInput");
-
-  const descriptionInput =
-    $("descriptionInput");
-
-  const title =
-    titleInput
-      ? titleInput.value.trim()
-      : "";
-
-  const description =
-    descriptionInput
-      ? descriptionInput.value.trim()
-      : "";
-
-
-  if (!title) {
-
-    showToast(
-      "Ajoute un titre avant de publier."
-    );
-
-    return;
-  }
-
-
-  const user =
-    auth.currentUser;
-
-
-  const publication = {
-
-    id:
-      "post-" +
-      Date.now(),
-
-    title,
-
-    description,
-
-    author:
-      user
-        ? (
-            user.displayName ||
-            user.email
-          )
-        : "Visiteur FISSA",
-
-    authorEmail:
-      user
-        ? user.email
-        : "",
-
-    type:
-      "actualite",
-
-    createdAt:
-      new Date().toISOString(),
-
-    likes: 0
-
-  };
-
-
-  publications.unshift(
-    publication
-  );
-
-
-  savePublications();
-
-  closeModal();
-
-  if (titleInput)
-    titleInput.value = "";
-
-  if (descriptionInput)
-    descriptionInput.value = "";
-
-
-  currentFilter =
-    "actualite";
-
-  renderFeed();
-
-
-  showToast(
-    "Publication ajoutée à l'actualité 🚀"
-  );
-
-
-  setTimeout(() => {
-
-    const feed =
-      $("feed");
-
-    if (feed) {
-
-      feed.scrollIntoView({
-        behavior: "smooth"
-      });
-
-    }
-
-  }, 300);
-};
-
-
-// ======================================================
-// SAUVEGARDE LOCALE DES PUBLICATIONS
-// ======================================================
-
-function savePublications() {
-
-  try {
-
-    localStorage.setItem(
-      "fissa_publications",
-      JSON.stringify(
-        publications
-      )
-    );
-
-  } catch (error) {
-
-    console.error(error);
-
-  }
-}
-
-
-function loadPublications() {
-
-  try {
-
-    const saved =
-      localStorage.getItem(
-        "fissa_publications"
-      );
-
-    if (saved) {
-
-      publications =
-        JSON.parse(saved);
-
-    }
-
-  } catch (error) {
-
-    console.error(error);
-
-    publications = [];
-
-  }
-}
-
-
-// ======================================================
-// FIL D'ACTUALITÉ
-// ======================================================
-
-function renderFeed() {
-
-  const feed =
-    $("feed");
-
-  if (!feed) return;
-
-
-  feed.innerHTML = "";
-
-
-  let data = [];
-
-
-  if (currentFilter === "story") {
-
-    data = stories;
-
-  } else {
-
-    data = publications;
-
-  }
-
-
-  if (!data.length) {
-
-    feed.innerHTML = `
-
-      <div class="empty-feed">
-
-        <div class="empty-icon">
-          ✨
-        </div>
-
-        <h3>
-          Rien à afficher pour le moment
-        </h3>
-
-        <p>
-          Publie une comparaison pour
-          commencer le fil FISSA.
-        </p>
-
-      </div>
-
-    `;
-
-    return;
-  }
-
-
-  data.forEach(
-    publication => {
-
-      feed.appendChild(
-        createPublicationCard(
-          publication
-        )
-      );
-
-    }
-  );
-}
-
-
-// ======================================================
-// CARTE PUBLICATION
-// ======================================================
-
-function createPublicationCard(
-  post
-) {
-
-  const article =
-    document.createElement(
-      "article"
-    );
-
-
-  article.className =
-    "feed-post";
-
-
-  const isAI =
-    post.author ===
-    "FISSA AI";
-
-
-  article.innerHTML = `
-
-    <div class="feed-post-head">
-
-      <div class="post-author">
-
-        <div class="post-avatar ${
-          isAI ? "ai-avatar" : ""
-        }">
-
-          ${
-            isAI
-              ? "🤖"
-              : escapeHTML(
-                  (post.author || "U")
-                    .charAt(0)
-                    .toUpperCase()
-                )
-          }
-
-        </div>
-
-        <div>
-
-          <strong>
-            ${escapeHTML(
-              post.author ||
-              "Utilisateur FISSA"
-            )}
-          </strong>
-
-          <small>
-            ${formatDate(
-              post.createdAt
-            )}
-          </small>
-
-        </div>
-
-      </div>
-
-      <span class="post-badge">
-        ${post.type === "story"
-          ? "STORY"
-          : "ACTUALITÉ"}
-      </span>
-
-    </div>
-
-
-    <div class="post-body">
-
-      <h3>
-        ${escapeHTML(
-          post.title
-        )}
-      </h3>
-
-      <p>
-        ${escapeHTML(
-          post.description ||
-          "Nouvelle publication FISSA."
-        )}
-      </p>
-
-    </div>
-
-
-    <div class="post-actions">
-
-      <button
-        type="button"
-        onclick="likePublication('${post.id}')"
-      >
-        ❤️
-        ${post.likes || 0}
-      </button>
-
-      <button
-        type="button"
-        onclick="sharePublication('${post.id}')"
-      >
-        ↗ Partager
-      </button>
-
-    </div>
-
-  `;
-
-
-  return article;
-}
-
-
-// ======================================================
-// LIKE PUBLICATION
-// ======================================================
-
-window.likePublication =
-function(id) {
-
-  const post =
-    publications.find(
-      item => item.id === id
-    );
-
-  if (!post) return;
-
-  post.likes =
-    (post.likes || 0) + 1;
-
-  savePublications();
-
-  renderFeed();
-
-  showToast(
-    "J'aime ajouté ❤️"
-  );
-};
-
-
-// ======================================================
-// PARTAGE PUBLICATION
-// ======================================================
-
-window.sharePublication =
-async function(id) {
-
-  const post =
-    publications.find(
-      item => item.id === id
-    );
-
-  if (!post) return;
-
-
-  const data = {
-
-    title:
-      "FISSA — " +
-      post.title,
-
-    text:
-      post.description ||
-      "Découvre cette publication FISSA.",
-
-    url:
-      window.location.href
-
-  };
-
-
-  try {
-
-    if (
-      navigator.share
-    ) {
-
-      await navigator.share(
-        data
-      );
-
-    } else {
-
-      await navigator.clipboard.writeText(
-        window.location.href
-      );
-
-      showToast(
-        "Lien copié 📋"
-      );
-
-    }
-
-  } catch (error) {
-
-    console.log(error);
-
-  }
-};
-
-
-// ======================================================
-// DATE
-// ======================================================
-
-function formatDate(date) {
-
-  if (!date)
-    return "maintenant";
-
-  const d =
-    new Date(date);
-
-  return d.toLocaleDateString(
-    "fr-FR",
-    {
-      day: "2-digit",
-      month: "short",
-      year: "numeric"
-    }
-  );
-}
-
-
-// ======================================================
+// ============================================================
 // VOTE A / B
-// ======================================================
+// ============================================================
 
-window.vote =
-function(side, button) {
-
-  if (
-    side !== "A" &&
-    side !== "B"
-  ) return;
-
+window.vote = function(side, button) {
 
   likes[side]++;
 
+  const count =
+    document.getElementById(
+      "likes" + side
+    );
 
-  const counter =
-    $("likes" + side);
+  if (count) {
 
-  if (counter) {
-
-    counter.textContent =
+    count.textContent =
       likes[side];
-
   }
-
 
   if (button) {
 
     button.classList.add(
       "active"
     );
-
   }
-
 
   updateScore();
 
-
   showToast(
-    "Vote pour " +
+    "Ton vote pour " +
     side +
-    " enregistré ❤️"
+    " a été enregistré ❤️"
   );
 };
 
@@ -1185,84 +595,105 @@ function(side, button) {
 function updateScore() {
 
   const total =
-    likes.A +
-    likes.B;
-
+    likes.A + likes.B;
 
   let percentA = 50;
-
   let percentB = 50;
-
 
   if (total > 0) {
 
     percentA =
       Math.round(
-        likes.A /
-        total *
-        100
+        likes.A / total * 100
       );
 
     percentB =
-      100 -
-      percentA;
-
+      100 - percentA;
   }
 
+  const scoreA =
+    document.getElementById(
+      "scoreA"
+    );
 
-  if ($("scoreA"))
-    $("scoreA").style.width =
+  const scoreB =
+    document.getElementById(
+      "scoreB"
+    );
+
+  const percentAElement =
+    document.getElementById(
+      "percentA"
+    );
+
+  const percentBElement =
+    document.getElementById(
+      "percentB"
+    );
+
+  if (scoreA) {
+
+    scoreA.style.width =
       percentA + "%";
+  }
 
+  if (scoreB) {
 
-  if ($("scoreB"))
-    $("scoreB").style.width =
+    scoreB.style.width =
       percentB + "%";
+  }
 
+  if (percentAElement) {
 
-  if ($("percentA"))
-    $("percentA").textContent =
+    percentAElement.textContent =
       percentA + "%";
+  }
 
+  if (percentBElement) {
 
-  if ($("percentB"))
-    $("percentB").textContent =
+    percentBElement.textContent =
       percentB + "%";
-
+  }
 }
 
 
-// ======================================================
-// MÉDIA IMAGE / VIDÉO
-// ======================================================
+// ============================================================
+// MÉDIA A / B
+// ============================================================
 
-window.loadMedia =
-function(event, side) {
+window.loadMedia = function(
+  event,
+  side
+) {
 
   const file =
     event.target.files[0];
 
   if (!file) return;
 
-
   const image =
-    $("image" + side);
+    document.getElementById(
+      "image" + side
+    );
 
   const video =
-    $("video" + side);
+    document.getElementById(
+      "video" + side
+    );
 
   const placeholder =
-    $("placeholder" + side);
-
+    document.getElementById(
+      "placeholder" + side
+    );
 
   const url =
     URL.createObjectURL(file);
 
+  if (image) {
 
-  if (image)
     image.style.display =
       "none";
-
+  }
 
   if (video) {
 
@@ -1270,62 +701,39 @@ function(event, side) {
       "none";
 
     video.pause();
-
   }
-
 
   if (
-    file.type.startsWith(
-      "image/"
-    )
+    file.type.startsWith("image/")
   ) {
 
-    if (image) {
+    image.src =
+      url;
 
-      image.src = url;
+    image.style.display =
+      "block";
 
-      image.style.display =
-        "block";
-
-    }
-
-  }
-
-
-  else if (
-    file.type.startsWith(
-      "video/"
-    )
+  } else if (
+    file.type.startsWith("video/")
   ) {
 
-    if (video) {
+    video.src =
+      url;
 
-      video.src = url;
+    video.style.display =
+      "block";
 
-      video.style.display =
-        "block";
-
-      video.controls = true;
-
-      video.preload = "metadata";
-
-      addVideoControls(
-        video,
-        side
-      );
-
-    }
-
+    createVideoControls(
+      video,
+      side
+    );
   }
-
 
   if (placeholder) {
 
     placeholder.style.display =
       "none";
-
   }
-
 
   showToast(
     "Média " +
@@ -1335,213 +743,186 @@ function(event, side) {
 };
 
 
-// ======================================================
-// CONTRÔLES VIDÉO
-// PLAY + SON + LIMITE 60 SEC
-// ======================================================
+// ============================================================
+// CONTRÔLES VIDÉO PLAY / PAUSE / SON
+// ============================================================
 
-function addVideoControls(
+function createVideoControls(
   video,
   side
 ) {
 
-  video.addEventListener(
-    "timeupdate",
-    function() {
+  const parent =
+    video.parentElement;
 
-      if (
-        video.currentTime >= 60
-      ) {
+  if (!parent) return;
 
-        video.pause();
+  let controls =
+    parent.querySelector(
+      ".fissa-video-controls"
+    );
 
-        video.currentTime =
-          60;
+  if (controls) {
 
-        showToast(
-          "Vidéo limitée à 60 secondes ⏱️"
-        );
+    controls.remove();
+  }
 
-      }
+  controls =
+    document.createElement("div");
 
-    }
-  );
+  controls.className =
+    "fissa-video-controls";
 
+  controls.innerHTML = `
 
-  video.addEventListener(
-    "play",
-    function() {
+    <button
+      type="button"
+      onclick="toggleVideo('${side}')"
+    >
+      ▶️
+    </button>
 
-      showToast(
-        "Lecture " +
-        side +
-        " ▶️"
-      );
+    <button
+      type="button"
+      onclick="toggleMute('${side}')"
+    >
+      🔊
+    </button>
 
-    }
-  );
+  `;
 
-
-  video.addEventListener(
-    "volumechange",
-    function() {
-
-      if (
-        video.muted
-      ) {
-
-        showToast(
-          "Son coupé 🔇"
-        );
-
-      } else {
-
-        showToast(
-          "Son activé 🔊"
-        );
-
-      }
-
-    }
+  parent.appendChild(
+    controls
   );
 }
 
 
-// ======================================================
-// BOUTON PLAY EXTERNE
-// ======================================================
-
-window.toggleVideo =
-function(side) {
+window.toggleVideo = function(side) {
 
   const video =
-    $("video" + side);
+    document.getElementById(
+      "video" + side
+    );
 
   if (!video) return;
 
-
-  if (
-    video.paused
-  ) {
+  if (video.paused) {
 
     video.play();
 
   } else {
 
     video.pause();
-
   }
 };
 
 
-// ======================================================
-// BOUTON SON
-// ======================================================
-
-window.toggleSound =
-function(side) {
+window.toggleMute = function(side) {
 
   const video =
-    $("video" + side);
+    document.getElementById(
+      "video" + side
+    );
 
   if (!video) return;
-
 
   video.muted =
     !video.muted;
 
-
   showToast(
     video.muted
-      ? "Son désactivé 🔇"
+      ? "Son coupé 🔇"
       : "Son activé 🔊"
   );
 };
 
 
-// ======================================================
+// ============================================================
 // COMMENTAIRES
-// ======================================================
+// ============================================================
 
-window.addComment =
-function(event) {
+window.commentFor = function(side) {
+
+  currentCommentSide =
+    side;
+
+  const input =
+    document.getElementById(
+      "commentInput"
+    );
+
+  if (input) {
+
+    input.placeholder =
+      "Ton avis sur la création " +
+      side +
+      "...";
+
+    input.focus();
+  }
+
+  scrollToComments();
+};
+
+
+window.addComment = function(event) {
 
   event.preventDefault();
 
-
   const input =
-    $("commentInput");
+    document.getElementById(
+      "commentInput"
+    );
 
   if (!input) return;
-
 
   const text =
     input.value.trim();
 
-
   if (!text) return;
-
 
   const comment =
     document.createElement(
       "div"
     );
 
-
   comment.className =
     "comment";
-
-
-  const user =
-    auth.currentUser;
-
-
-  const name =
-    user
-      ? (
-          user.displayName ||
-          user.email
-        )
-      : "Visiteur";
-
 
   const strong =
     document.createElement(
       "strong"
     );
 
-
   strong.textContent =
-    name;
-
+    getCurrentUserName();
 
   comment.appendChild(
     strong
   );
 
-
   comment.appendChild(
     document.createTextNode(
-      " " + text
+      " [" +
+      currentCommentSide +
+      "] " +
+      text
     )
   );
 
-
   const list =
-    $("commentsList");
-
+    document.getElementById(
+      "commentsList"
+    );
 
   if (list) {
 
     list.prepend(
       comment
     );
-
   }
 
-
   input.value = "";
-
 
   showToast(
     "Commentaire publié 💬"
@@ -1549,38 +930,13 @@ function(event) {
 };
 
 
-// ======================================================
-// COMMENTER A / B
-// ======================================================
+// ============================================================
+// PARTAGE
+// ============================================================
 
-window.commentFor =
-function(side) {
-
-  const input =
-    $("commentInput");
-
-  if (!input) return;
-
-
-  input.placeholder =
-    "Ton avis sur la création " +
-    side +
-    "...";
-
-
-  input.focus();
-
-
-  scrollToComments();
-};
-
-
-// ======================================================
-// PARTAGE A / B
-// ======================================================
-
-window.sharePost =
-async function(side) {
+window.sharePost = async function(
+  side
+) {
 
   const data = {
 
@@ -1593,9 +949,7 @@ async function(side) {
 
     url:
       window.location.href
-
   };
-
 
   try {
 
@@ -1607,35 +961,37 @@ async function(side) {
         data
       );
 
-    } else {
+    } else if (
+      navigator.clipboard
+    ) {
 
       await navigator.clipboard.writeText(
         window.location.href
       );
 
       showToast(
-        "Lien copié 📋"
+        "Lien copié ! 🔗"
       );
-
     }
 
   } catch (error) {
 
     console.log(error);
-
   }
 };
 
 
-// ======================================================
-// NAVIGATION COMPARAISON
-// ======================================================
+// ============================================================
+// NAVIGATION
+// ============================================================
 
 window.scrollToComparison =
 function() {
 
   const element =
-    $("comparison");
+    document.getElementById(
+      "comparison"
+    );
 
   if (!element) return;
 
@@ -1649,7 +1005,9 @@ window.scrollToComments =
 function() {
 
   const element =
-    $("comments");
+    document.getElementById(
+      "comments"
+    );
 
   if (!element) return;
 
@@ -1659,124 +1017,556 @@ function() {
 };
 
 
-// ======================================================
-// FISSA AI — UTILISATEUR AUTOMATIQUE
-// ======================================================
+window.scrollToNews =
+function() {
 
-function createFISSAAI() {
-
-  const exists =
-    publications.some(
-      post =>
-        post.author ===
-        "FISSA AI"
+  const element =
+    document.getElementById(
+      "newsFeed"
     );
 
-  if (exists) return;
+  if (!element) return;
 
+  element.scrollIntoView({
+    behavior: "smooth"
+  });
+};
+
+
+// ============================================================
+// MODAL PUBLICATION
+// ============================================================
+
+window.openModal =
+function() {
+
+  const modal =
+    document.getElementById(
+      "modal"
+    );
+
+  if (modal) {
+
+    modal.classList.add(
+      "show"
+    );
+  }
+};
+
+
+window.closeModal =
+function() {
+
+  const modal =
+    document.getElementById(
+      "modal"
+    );
+
+  if (modal) {
+
+    modal.classList.remove(
+      "show"
+    );
+  }
+};
+
+
+// ============================================================
+// VRAIE PUBLICATION DANS LE FIL
+// ============================================================
+
+window.publishComparison =
+function() {
+
+  const title =
+    document.getElementById(
+      "titleInput"
+    );
+
+  const description =
+    document.getElementById(
+      "descriptionInput"
+    );
+
+  const titleValue =
+    title
+      ? title.value.trim()
+      : "";
+
+  const descriptionValue =
+    description
+      ? description.value.trim()
+      : "";
+
+  if (!titleValue) {
+
+    showToast(
+      "Ajoute un titre avant de publier."
+    );
+
+    return;
+  }
+
+  const user =
+    auth.currentUser;
+
+  const publication = {
+
+    id:
+      Date.now(),
+
+    title:
+      titleValue,
+
+    description:
+      descriptionValue,
+
+    author:
+      user
+        ? (
+            user.displayName ||
+            user.email
+          )
+        : "Visiteur",
+
+    avatar:
+      user
+        ? (
+            user.displayName ||
+            "U"
+          ).charAt(0).toUpperCase()
+        : "V",
+
+    createdAt:
+      new Date().toISOString(),
+
+    likes: 0,
+
+    comments: []
+  };
+
+  publications.unshift(
+    publication
+  );
+
+  savePublications();
+
+  renderNewsFeed();
+
+  closeModal();
+
+  if (title) {
+
+    title.value = "";
+  }
+
+  if (description) {
+
+    description.value = "";
+  }
+
+  showToast(
+    "Publication ajoutée au fil d'actualité 🚀"
+  );
+
+  setTimeout(
+    scrollToNews,
+    300
+  );
+};
+
+
+// ============================================================
+// FIL D'ACTUALITÉ
+// ============================================================
+
+function renderNewsFeed() {
+
+  const feed =
+    document.getElementById(
+      "newsFeed"
+    );
+
+  if (!feed) return;
+
+  feed.innerHTML = "";
+
+  // Publication FISSA AI toujours présente
 
   const aiPost = {
 
-    id:
-      "fissa-ai-" +
-      Date.now(),
+    id: "fissa-ai",
 
     title:
       "Bienvenue sur FISSA 🌍",
 
     description:
-      "FISSA AI vous présente les nouvelles créations. Comparez A et B, votez, commentez et partagez avec la communauté.",
+      "Je suis FISSA AI 🤖. Je participe à la communauté et je publie aussi des contenus, des découvertes et des comparaisons.",
 
     author:
       "FISSA AI",
 
-    authorEmail:
-      "ai@fissa.app",
+    avatar:
+      "AI",
 
-    type:
-      "actualite",
-
-    createdAt:
-      new Date().toISOString(),
+    ai:
+      true,
 
     likes:
-      0
-
+      125
   };
 
-
-  publications.unshift(
-    aiPost
+  feed.appendChild(
+    createPostCard(aiPost)
   );
 
 
+  publications.forEach(
+    post => {
+
+      feed.appendChild(
+        createPostCard(post)
+      );
+
+    }
+  );
+}
+
+
+function createPostCard(post) {
+
+  const article =
+    document.createElement(
+      "article"
+    );
+
+  article.className =
+    "news-card";
+
+  if (post.ai) {
+
+    article.classList.add(
+      "ai-post"
+    );
+  }
+
+  article.innerHTML = `
+
+    <div class="news-user">
+
+      <div class="news-avatar">
+        ${escapeHTML(post.avatar)}
+      </div>
+
+      <div>
+
+        <strong>
+          ${escapeHTML(post.author)}
+        </strong>
+
+        <small>
+          ${post.ai
+            ? "🤖 Membre FISSA AI"
+            : formatDate(post.createdAt)}
+        </small>
+
+      </div>
+
+    </div>
+
+    <h3>
+      ${escapeHTML(post.title)}
+    </h3>
+
+    <p>
+      ${escapeHTML(post.description)}
+    </p>
+
+    <div class="news-actions">
+
+      <button
+        type="button"
+        onclick="likeNews('${post.id}')"
+      >
+        ❤️
+        <span>
+          ${post.likes || 0}
+        </span>
+      </button>
+
+      <button
+        type="button"
+        onclick="shareNews('${post.id}')"
+      >
+        ↗ Partager
+      </button>
+
+    </div>
+
+  `;
+
+  return article;
+}
+
+
+function formatDate(date) {
+
+  if (!date) {
+
+    return "Maintenant";
+  }
+
+  try {
+
+    return new Date(
+      date
+    ).toLocaleString(
+      "fr-FR",
+      {
+        day: "2-digit",
+        month: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      }
+    );
+
+  } catch {
+
+    return "Maintenant";
+  }
+}
+
+
+// ============================================================
+// LIKE FIL D'ACTUALITÉ
+// ============================================================
+
+window.likeNews = function(id) {
+
+  if (id === "fissa-ai") {
+
+    showToast(
+      "Tu as aimé la publication de FISSA AI 🤖❤️"
+    );
+
+    return;
+  }
+
+  const post =
+    publications.find(
+      p => String(p.id) === String(id)
+    );
+
+  if (!post) return;
+
+  post.likes =
+    (post.likes || 0) + 1;
+
   savePublications();
 
-}
+  renderNewsFeed();
+
+  showToast(
+    "J'aime enregistré ❤️"
+  );
+};
 
 
-// ======================================================
-// STORY
-// ======================================================
+// ============================================================
+// PARTAGE PUBLICATION
+// ============================================================
 
-function createDefaultStory() {
+window.shareNews = async function(id) {
 
-  if (stories.length)
-    return;
+  const post =
+    publications.find(
+      p => String(p.id) === String(id)
+    );
 
+  const title =
+    post
+      ? post.title
+      : "FISSA";
 
-  stories.push({
-
-    id:
-      "story-fissa",
+  const data = {
 
     title:
-      "FISSA Story",
+      "FISSA — " + title,
 
-    description:
-      "Découvrez les nouveautés FISSA.",
+    text:
+      "Découvre cette publication sur FISSA.",
+
+    url:
+      window.location.href
+  };
+
+  try {
+
+    if (
+      navigator.share
+    ) {
+
+      await navigator.share(
+        data
+      );
+
+    } else {
+
+      await navigator.clipboard.writeText(
+        window.location.href
+      );
+
+      showToast(
+        "Lien copié 🔗"
+      );
+    }
+
+  } catch (error) {
+
+    console.log(error);
+  }
+};
+
+
+// ============================================================
+// STORIES
+// ============================================================
+
+window.createStory =
+function() {
+
+  const user =
+    auth.currentUser;
+
+  if (!user) {
+
+    openAuth("login");
+
+    return;
+  }
+
+  const text =
+    prompt(
+      "Écris ta story FISSA :"
+    );
+
+  if (!text) return;
+
+  const story = {
+
+    id:
+      Date.now(),
 
     author:
-      "FISSA AI",
+      user.displayName ||
+      user.email ||
+      "Utilisateur FISSA",
 
-    type:
-      "story",
+    text:
+      text,
 
     createdAt:
-      new Date().toISOString(),
+      new Date().toISOString()
+  };
 
-    likes:
-      0
+  stories.unshift(
+    story
+  );
 
-  });
+  saveStories();
 
+  renderStories();
+
+  showToast(
+    "Story publiée 📖"
+  );
+};
+
+
+function renderStories() {
+
+  const container =
+    document.getElementById(
+      "stories"
+    );
+
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  stories.forEach(
+    story => {
+
+      const item =
+        document.createElement(
+          "button"
+        );
+
+      item.type =
+        "button";
+
+      item.className =
+        "story-item";
+
+      item.innerHTML = `
+
+        <div class="story-avatar">
+          ${escapeHTML(
+            story.author
+              .charAt(0)
+              .toUpperCase()
+          )}
+        </div>
+
+        <span>
+          ${escapeHTML(
+            story.author
+          )}
+        </span>
+
+      `;
+
+      item.onclick =
+        function() {
+
+          alert(
+            story.author +
+            "\\n\\n" +
+            story.text
+          );
+        };
+
+      container.appendChild(
+        item
+      );
+    }
+  );
 }
 
 
-// ======================================================
-// INITIALISATION
-// ======================================================
+// ============================================================
+// FERMETURE DES MODALS
+// ============================================================
 
 document.addEventListener(
   "DOMContentLoaded",
-  function() {
+  () => {
 
-    loadPublications();
+    renderNewsFeed();
 
-    createFISSAAI();
+    renderStories();
 
-    createDefaultStory();
-
-    renderFeed();
-
-
-    // ------------------------------------------
-    // Fermeture modal publication
-    // ------------------------------------------
+    updateScore();
 
     const modal =
-      $("modal");
+      document.getElementById(
+        "modal"
+      );
 
+    const authModal =
+      document.getElementById(
+        "authModal"
+      );
 
     if (modal) {
 
@@ -1789,22 +1579,10 @@ document.addEventListener(
           ) {
 
             closeModal();
-
           }
-
         }
       );
-
     }
-
-
-    // ------------------------------------------
-    // Fermeture modal authentification
-    // ------------------------------------------
-
-    const authModal =
-      $("authModal");
-
 
     if (authModal) {
 
@@ -1813,50 +1591,37 @@ document.addEventListener(
         event => {
 
           if (
-            event.target ===
-            authModal
+            event.target === authModal
           ) {
 
             closeAuth();
-
           }
-
         }
       );
-
     }
 
-
-    // ------------------------------------------
-    // Canvas mathématique
-    // ------------------------------------------
-
     initMathCanvas();
-
   }
 );
 
 
-// ======================================================
+// ============================================================
 // CANVAS MATHÉMATIQUE
-// ======================================================
+// ============================================================
 
 function initMathCanvas() {
 
   const canvas =
-    $("mathCanvas");
+    document.getElementById(
+      "mathCanvas"
+    );
 
   if (!canvas) return;
 
-
   const ctx =
-    canvas.getContext(
-      "2d"
-    );
-
+    canvas.getContext("2d");
 
   let particles = [];
-
 
   function resizeCanvas() {
 
@@ -1866,9 +1631,7 @@ function initMathCanvas() {
     canvas.height =
       window.innerHeight;
 
-
     particles = [];
-
 
     for (
       let i = 0;
@@ -1887,25 +1650,17 @@ function initMathCanvas() {
           canvas.height,
 
         vx:
-          (
-            Math.random() -
-            .5
-          ) * .35,
+          (Math.random() - .5)
+          * .35,
 
         vy:
-          (
-            Math.random() -
-            .5
-          ) * .35,
+          (Math.random() - .5)
+          * .35,
 
         r:
-          Math.random() *
-          2 + 1
-
+          Math.random() * 2 + 1
       });
-
     }
-
   }
 
 
@@ -1918,7 +1673,6 @@ function initMathCanvas() {
       canvas.height
     );
 
-
     particles.forEach(
       (p, i) => {
 
@@ -1926,16 +1680,13 @@ function initMathCanvas() {
 
         p.y += p.vy;
 
-
         if (
           p.x < 0 ||
           p.x > canvas.width
         ) {
 
           p.vx *= -1;
-
         }
-
 
         if (
           p.y < 0 ||
@@ -1943,12 +1694,9 @@ function initMathCanvas() {
         ) {
 
           p.vy *= -1;
-
         }
 
-
         ctx.beginPath();
-
 
         ctx.arc(
           p.x,
@@ -1958,13 +1706,10 @@ function initMathCanvas() {
           Math.PI * 2
         );
 
-
         ctx.fillStyle =
           "rgba(69,199,255,.65)";
 
-
         ctx.fill();
-
 
         for (
           let j = i + 1;
@@ -1975,13 +1720,11 @@ function initMathCanvas() {
           const q =
             particles[j];
 
-
           const dx =
             p.x - q.x;
 
           const dy =
             p.y - q.y;
-
 
           const distance =
             Math.sqrt(
@@ -1989,25 +1732,21 @@ function initMathCanvas() {
               dy * dy
             );
 
-
           if (
             distance < 130
           ) {
 
             ctx.beginPath();
 
-
             ctx.moveTo(
               p.x,
               p.y
             );
 
-
             ctx.lineTo(
               q.x,
               q.y
             );
-
 
             ctx.strokeStyle =
               "rgba(69,199,255," +
@@ -2017,54 +1756,23 @@ function initMathCanvas() {
               ) +
               ")";
 
-
             ctx.stroke();
-
           }
-
         }
-
       }
     );
-
 
     requestAnimationFrame(
       drawMath
     );
-
   }
-
 
   window.addEventListener(
     "resize",
     resizeCanvas
   );
 
-
   resizeCanvas();
 
   drawMath();
-
 }
-
-
-// ======================================================
-// RACCOURCI ESCAPE
-// ======================================================
-
-document.addEventListener(
-  "keydown",
-  event => {
-
-    if (
-      event.key === "Escape"
-    ) {
-
-      closeModal();
-
-      closeAuth();
-
-    }
-
-  }
-);
