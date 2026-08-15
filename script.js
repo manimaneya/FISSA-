@@ -1,242 +1,77 @@
 // ======================================================
-// FISSA — SOCIAL COMPARISON PLATFORM
-// Feed + A/B + Votes + Stories + Profiles + Publication
+// FISSA — SCRIPT.JS
+// Réseau social de comparaison A / B
+// Firestore + Auth + Fil d'actualité + Stories
 // ======================================================
 
-import * as Firebase from "./firebase.js";
+import {
+  auth,
+  db,
 
-const auth = Firebase.auth;
-const db = Firebase.db;
-
-const {
   onAuthStateChanged,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  updateProfile
-} = Firebase;
+  updateProfile,
+
+  collection,
+  addDoc,
+  getDocs,
+  getDoc,
+  doc,
+  setDoc,
+  updateDoc,
+  query,
+  orderBy,
+  limit,
+  onSnapshot,
+  serverTimestamp,
+  increment
+} from "./firebase.js";
 
 
 // ======================================================
 // VARIABLES
 // ======================================================
 
-let currentUser = null;
-
 let authMode = "login";
-
-let currentFilter = "all";
-
-let currentCommentPost = null;
 
 let toastTimer = null;
 
-let localPosts =
-  JSON.parse(
-    localStorage.getItem("fissa_posts") || "[]"
-  );
+let currentUser = null;
 
-let localProfile =
-  JSON.parse(
-    localStorage.getItem("fissa_profile") || "{}"
-  );
+let unsubscribeFeed = null;
 
+let selectedSide = "A";
 
-// ======================================================
-// CATÉGORIES
-// ======================================================
-
-const categoryNames = {
-
-  news: "📰 Actualité",
-  music: "🎵 Musique",
-  comedy: "😂 Comedy",
-  sport: "⚽ Sport",
-  world: "🌍 Monde",
-  science: "🔬 Science",
-  art: "🎨 Art"
-
+let likes = {
+  A: 0,
+  B: 0
 };
-
-
-// ======================================================
-// POSTS DE DÉMONSTRATION
-// ======================================================
-
-const demoPosts = [
-
-  {
-    id:"fissa-ai-001",
-
-    title:
-      "FISSA AI — Quel contenu préfères-tu ?",
-
-    description:
-      "Bienvenue sur FISSA. Compare les deux créations et vote pour ton choix.",
-
-    category:"world",
-
-    author:
-      "FISSA AI",
-
-    authorAvatar:
-      "AI",
-
-    ai:true,
-
-    mediaA:"",
-    mediaB:"",
-
-    typeA:"empty",
-    typeB:"empty",
-
-    likesA:12,
-    likesB:8,
-
-    comments:[],
-
-    song:true,
-
-    createdAt:
-      Date.now()
-  },
-
-  {
-    id:"fissa-music-001",
-
-    title:
-      "🎵 Music Battle — A VS B",
-
-    description:
-      "Choisis ton favori et participe au classement FISSA.",
-
-    category:"music",
-
-    author:
-      "FISSA AI",
-
-    authorAvatar:
-      "AI",
-
-    ai:true,
-
-    mediaA:"",
-    mediaB:"",
-
-    typeA:"empty",
-    typeB:"empty",
-
-    likesA:21,
-    likesB:17,
-
-    comments:[],
-
-    song:true,
-
-    createdAt:
-      Date.now() - 1000
-  }
-
-];
 
 
 // ======================================================
 // INITIALISATION
 // ======================================================
 
-document.addEventListener(
-  "DOMContentLoaded",
-  () => {
+document.addEventListener("DOMContentLoaded", () => {
 
-    startMathBackground();
+  createProfessionalInterface();
 
-    renderFeed();
+  initializeMathBackground();
 
-    setupAuth();
+  loadFeed();
 
-  }
-);
+  createFissaAI();
 
-
-// ======================================================
-// AUTH FIREBASE
-// ======================================================
-
-function setupAuth(){
-
-  if(
-    auth &&
-    typeof onAuthStateChanged === "function"
-  ){
-
-    onAuthStateChanged(
-      auth,
-      user => {
-
-        currentUser = user;
-
-        updateAccountInterface();
-
-      }
-    );
-
-  }else{
-
-    updateAccountInterface();
-
-  }
-
-}
+});
 
 
 // ======================================================
-// COMPTE
+// AUTHENTIFICATION
 // ======================================================
 
-function updateAccountInterface(){
-
-  const login =
-    document.getElementById("loginButton");
-
-  const avatar =
-    document.getElementById("userAvatar");
-
-  if(!login || !avatar) return;
-
-  if(currentUser){
-
-    login.classList.add("hidden");
-
-    avatar.classList.remove("hidden");
-
-    const letter =
-      (
-        currentUser.displayName ||
-        currentUser.email ||
-        "U"
-      )
-      .charAt(0)
-      .toUpperCase();
-
-    avatar.textContent = letter;
-
-  }else{
-
-    login.classList.remove("hidden");
-
-    avatar.classList.add("hidden");
-
-  }
-
-}
-
-
-// ======================================================
-// AUTH MODAL
-// ======================================================
-
-window.openAuth =
-function(mode="login"){
+window.openAuth = function(mode = "login") {
 
   authMode = mode;
 
@@ -249,65 +84,77 @@ function(mode="login"){
   const name =
     document.getElementById("authName");
 
-  const button =
-    document.querySelector(
-      "#authModal .publish-main-button"
-    );
+  const submit =
+    document.getElementById("authSubmit");
 
   const switchButton =
     document.getElementById("switchAuth");
 
+  if (!modal) return;
+
   modal.classList.add("show");
 
-  if(mode === "register"){
+  if (mode === "register") {
 
-    title.textContent =
-      "Créer un compte FISSA";
+    if (title)
+      title.textContent =
+        "Créer un compte FISSA";
 
-    name.classList.remove("hidden");
+    if (name)
+      name.classList.remove("hidden");
 
-    button.textContent =
-      "Créer mon compte";
+    if (submit)
+      submit.textContent =
+        "Créer mon compte";
 
-    switchButton.textContent =
-      "J'ai déjà un compte";
+    if (switchButton)
+      switchButton.textContent =
+        "J'ai déjà un compte — Me connecter";
 
-  }else{
+  } else {
 
-    title.textContent =
-      "Connexion FISSA";
+    if (title)
+      title.textContent =
+        "Connexion FISSA";
 
-    name.classList.add("hidden");
+    if (name)
+      name.classList.add("hidden");
 
-    button.textContent =
-      "Se connecter";
+    if (submit)
+      submit.textContent =
+        "Se connecter";
 
-    switchButton.textContent =
-      "Créer un compte";
-
+    if (switchButton)
+      switchButton.textContent =
+        "Créer un nouveau compte";
   }
-
 };
 
 
-window.closeAuth =
-function(){
+// ======================================================
+// FERMER AUTH
+// ======================================================
 
-  document
-    .getElementById("authModal")
-    .classList.remove("show");
+window.closeAuth = function() {
 
+  const modal =
+    document.getElementById("authModal");
+
+  if (modal)
+    modal.classList.remove("show");
 };
 
 
-window.switchAuth =
-function(){
+// ======================================================
+// CHANGER AUTH
+// ======================================================
 
-  openAuth(
-    authMode === "login"
-      ? "register"
-      : "login"
-  );
+window.switchAuth = function() {
+
+  if (authMode === "login")
+    openAuth("register");
+  else
+    openAuth("login");
 
 };
 
@@ -316,61 +163,52 @@ function(){
 // AUTH SUBMIT
 // ======================================================
 
-window.submitAuth =
-async function(){
+window.submitAuth = async function() {
 
-  const email =
-    document
-      .getElementById("authEmail")
-      .value
-      .trim();
+  const nameInput =
+    document.getElementById("authName");
 
-  const password =
-    document
-      .getElementById("authPassword")
-      .value;
+  const emailInput =
+    document.getElementById("authEmail");
+
+  const passwordInput =
+    document.getElementById("authPassword");
 
   const name =
-    document
-      .getElementById("authName")
-      .value
-      .trim();
+    nameInput?.value.trim() || "";
 
-  if(!email){
+  const email =
+    emailInput?.value.trim() || "";
 
-    showToast("Entre ton e-mail.");
+  const password =
+    passwordInput?.value || "";
+
+  if (!email) {
+
+    showToast("Entre ton adresse e-mail.");
 
     return;
-
   }
 
-  if(password.length < 6){
+  if (!password) {
+
+    showToast("Entre ton mot de passe.");
+
+    return;
+  }
+
+  if (password.length < 6) {
 
     showToast(
-      "Mot de passe : 6 caractères minimum."
+      "Le mot de passe doit avoir au moins 6 caractères."
     );
 
     return;
-
   }
 
-  if(
-    !auth ||
-    typeof createUserWithEmailAndPassword !==
-    "function"
-  ){
+  try {
 
-    showToast(
-      "Firebase Auth n'est pas configuré."
-    );
-
-    return;
-
-  }
-
-  try{
-
-    if(authMode === "register"){
+    if (authMode === "register") {
 
       const result =
         await createUserWithEmailAndPassword(
@@ -379,25 +217,26 @@ async function(){
           password
         );
 
-      if(
-        name &&
-        typeof updateProfile === "function"
-      ){
+      if (name) {
 
         await updateProfile(
           result.user,
           {
-            displayName:name
+            displayName: name
           }
         );
-
       }
 
-      showToast(
-        "Compte créé 🎉"
+      await createUserDocument(
+        result.user,
+        name
       );
 
-    }else{
+      showToast(
+        "Compte FISSA créé avec succès 🎉"
+      );
+
+    } else {
 
       await signInWithEmailAndPassword(
         auth,
@@ -408,79 +247,184 @@ async function(){
       showToast(
         "Connexion réussie ✅"
       );
-
     }
 
     closeAuth();
 
-  }catch(error){
+    clearAuthForm();
 
-    console.error(error);
+  } catch (error) {
 
-    showToast(
-      firebaseMessage(error)
+    console.error(
+      "Firebase Auth:",
+      error
     );
 
+    showFirebaseError(error);
   }
-
 };
 
 
 // ======================================================
-// LOGOUT
+// DOCUMENT UTILISATEUR
 // ======================================================
 
-window.logout =
-async function(){
+async function createUserDocument(
+  user,
+  name = ""
+) {
 
-  if(
-    auth &&
-    typeof signOut === "function"
-  ){
+  try {
 
-    await signOut(auth);
+    const userRef =
+      doc(
+        db,
+        "users",
+        user.uid
+      );
+
+    await setDoc(
+      userRef,
+      {
+        uid: user.uid,
+
+        name:
+          name ||
+          user.displayName ||
+          "Utilisateur FISSA",
+
+        email:
+          user.email || "",
+
+        photoURL:
+          user.photoURL || "",
+
+        createdAt:
+          serverTimestamp(),
+
+        followers: 0,
+
+        following: 0,
+
+        posts: 0
+      },
+      {
+        merge: true
+      }
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Création utilisateur:",
+      error
+    );
+  }
+}
+
+
+// ======================================================
+// ÉTAT UTILISATEUR
+// ======================================================
+
+onAuthStateChanged(
+  auth,
+  async (user) => {
+
+    currentUser = user;
+
+    updateInterface(user);
+
+    if (user) {
+
+      await createUserDocument(
+        user,
+        user.displayName
+      );
+    }
 
   }
-
-  showToast(
-    "Déconnexion réussie."
-  );
-
-  goHome();
-
-};
+);
 
 
 // ======================================================
-// FIREBASE ERROR
+// INTERFACE COMPTE
 // ======================================================
 
-function firebaseMessage(error){
+function updateInterface(user) {
 
-  const messages = {
+  const loginButton =
+    document.getElementById(
+      "loginButton"
+    );
 
-    "auth/email-already-in-use":
-      "Cet e-mail possède déjà un compte.",
+  const userAvatar =
+    document.getElementById(
+      "userAvatar"
+    );
 
-    "auth/invalid-email":
-      "Adresse e-mail invalide.",
+  const profileName =
+    document.getElementById(
+      "profileName"
+    );
 
-    "auth/invalid-credential":
-      "E-mail ou mot de passe incorrect.",
+  const profileEmail =
+    document.getElementById(
+      "profileEmail"
+    );
 
-    "auth/weak-password":
-      "Mot de passe trop faible.",
+  const profileUid =
+    document.getElementById(
+      "profileUid"
+    );
 
-    "auth/network-request-failed":
-      "Connexion Internet impossible."
+  if (user) {
 
-  };
+    loginButton?.classList.add(
+      "hidden"
+    );
 
-  return (
-    messages[error.code] ||
-    error.message ||
-    "Erreur Firebase."
-  );
+    userAvatar?.classList.remove(
+      "hidden"
+    );
+
+    const letter =
+      (
+        user.displayName ||
+        user.email ||
+        "U"
+      )
+      .charAt(0)
+      .toUpperCase();
+
+    if (userAvatar)
+      userAvatar.textContent =
+        letter;
+
+    if (profileName)
+      profileName.textContent =
+        user.displayName ||
+        "Utilisateur FISSA";
+
+    if (profileEmail)
+      profileEmail.textContent =
+        user.email || "";
+
+    if (profileUid)
+      profileUid.textContent =
+        "ID utilisateur : " +
+        user.uid;
+
+  } else {
+
+    loginButton?.classList.remove(
+      "hidden"
+    );
+
+    userAvatar?.classList.add(
+      "hidden"
+    );
+  }
 
 }
 
@@ -489,142 +433,180 @@ function firebaseMessage(error){
 // PROFIL
 // ======================================================
 
-window.openProfile =
-function(){
+window.openProfile = function() {
 
-  if(!currentUser){
+  if (!currentUser) {
 
     openAuth("login");
 
     return;
-
   }
 
-  document
-    .getElementById("homePage")
-    .classList.add("hidden");
+  const profile =
+    document.getElementById(
+      "profilePage"
+    );
 
-  document
-    .getElementById("profilePage")
-    .classList.remove("hidden");
+  if (!profile) return;
 
-  const name =
-    currentUser.displayName ||
-    "Utilisateur FISSA";
+  profile.classList.remove(
+    "hidden"
+  );
 
-  const email =
-    currentUser.email ||
-    "";
-
-  document
-    .getElementById("profileName")
-    .textContent = name;
-
-  document
-    .getElementById("profileEmail")
-    .textContent = email;
-
-  const posts =
-    localPosts.filter(
-      p =>
-        p.authorUid ===
-        currentUser.uid
-    ).length;
-
-  document
-    .getElementById("profilePosts")
-    .textContent = posts;
-
-};
-
-
-window.goHome =
-function(){
-
-  document
-    .getElementById("profilePage")
-    .classList.add("hidden");
-
-  document
-    .getElementById("homePage")
-    .classList.remove("hidden");
-
-  window.scrollTo({
-    top:0,
-    behavior:"smooth"
+  profile.scrollIntoView({
+    behavior: "smooth"
   });
 
 };
 
 
 // ======================================================
-// PROFIL PHOTO
+// DÉCONNEXION
 // ======================================================
 
-window.changeProfilePhoto =
-function(){
+window.logout = async function() {
 
-  const input =
-    document.createElement("input");
+  try {
 
-  input.type = "file";
+    await signOut(auth);
 
-  input.accept =
-    "image/*";
+    showToast(
+      "Déconnexion réussie 👋"
+    );
 
-  input.onchange =
-    event => {
+  } catch (error) {
 
-      const file =
-        event.target.files[0];
+    console.error(error);
 
-      if(!file) return;
-
-      const reader =
-        new FileReader();
-
-      reader.onload =
-        e => {
-
-          localProfile.photo =
-            e.target.result;
-
-          localStorage.setItem(
-            "fissa_profile",
-            JSON.stringify(localProfile)
-          );
-
-          const box =
-            document.getElementById(
-              "profilePhoto"
-            );
-
-          box.innerHTML =
-            `<img src="${e.target.result}" alt="Photo">`;
-
-          showToast(
-            "Photo de profil modifiée 📷"
-          );
-
-        };
-
-      reader.readAsDataURL(file);
-
-    };
-
-  input.click();
+    showToast(
+      "Erreur lors de la déconnexion."
+    );
+  }
 
 };
+
+
+// ======================================================
+// NETTOYER AUTH
+// ======================================================
+
+function clearAuthForm() {
+
+  const fields = [
+    "authName",
+    "authEmail",
+    "authPassword"
+  ];
+
+  fields.forEach(id => {
+
+    const element =
+      document.getElementById(id);
+
+    if (element)
+      element.value = "";
+
+  });
+
+}
+
+
+// ======================================================
+// ERREURS FIREBASE
+// ======================================================
+
+function showFirebaseError(error) {
+
+  let message =
+    "Une erreur Firebase est survenue.";
+
+  switch (error.code) {
+
+    case "auth/email-already-in-use":
+      message =
+        "Cet e-mail possède déjà un compte.";
+      break;
+
+    case "auth/invalid-email":
+      message =
+        "Adresse e-mail invalide.";
+      break;
+
+    case "auth/weak-password":
+      message =
+        "Mot de passe trop faible.";
+      break;
+
+    case "auth/invalid-credential":
+      message =
+        "E-mail ou mot de passe incorrect.";
+      break;
+
+    case "auth/user-not-found":
+      message =
+        "Aucun compte avec cet e-mail.";
+      break;
+
+    case "auth/wrong-password":
+      message =
+        "Mot de passe incorrect.";
+      break;
+
+    case "auth/too-many-requests":
+      message =
+        "Trop de tentatives. Réessaie plus tard.";
+      break;
+
+    case "auth/network-request-failed":
+      message =
+        "Vérifie ta connexion Internet.";
+      break;
+
+    default:
+      message =
+        error.message ||
+        message;
+  }
+
+  showToast(message);
+}
 
 
 // ======================================================
 // PUBLICATION
 // ======================================================
 
-window.openPublish =
-function(){
+window.publishComparison =
+async function() {
 
-  if(!currentUser){
+  const titleInput =
+    document.getElementById(
+      "titleInput"
+    );
+
+  const descriptionInput =
+    document.getElementById(
+      "descriptionInput"
+    );
+
+  const title =
+    titleInput?.value.trim() || "";
+
+  const description =
+    descriptionInput?.value.trim() || "";
+
+  if (!title) {
+
+    showToast(
+      "Ajoute un titre avant de publier."
+    );
+
+    return;
+  }
+
+  if (!currentUser) {
+
+    closeModal();
 
     openAuth("login");
 
@@ -633,1139 +615,1496 @@ function(){
     );
 
     return;
-
   }
 
-  document
-    .getElementById("publishModal")
-    .classList.add("show");
+  try {
 
+    const post = {
+
+      title,
+
+      description,
+
+      authorId:
+        currentUser.uid,
+
+      authorName:
+        currentUser.displayName ||
+        currentUser.email ||
+        "Utilisateur FISSA",
+
+      authorEmail:
+        currentUser.email || "",
+
+      authorPhoto:
+        currentUser.photoURL || "",
+
+      sideA: {
+
+        title:
+          "Création A",
+
+        likes: 0
+      },
+
+      sideB: {
+
+        title:
+          "Création B",
+
+        likes: 0
+      },
+
+      totalLikes: 0,
+
+      comments: 0,
+
+      shares: 0,
+
+      category:
+        "Comparaison",
+
+      createdAt:
+        serverTimestamp()
+    };
+
+
+    await addDoc(
+      collection(
+        db,
+        "posts"
+      ),
+      post
+    );
+
+
+    // Mise à jour du nombre de publications
+    try {
+
+      await updateDoc(
+        doc(
+          db,
+          "users",
+          currentUser.uid
+        ),
+        {
+          posts:
+            increment(1)
+        }
+      );
+
+    } catch (e) {
+
+      console.log(
+        "Compteur utilisateur:",
+        e
+      );
+    }
+
+
+    if (titleInput)
+      titleInput.value = "";
+
+    if (descriptionInput)
+      descriptionInput.value = "";
+
+    closeModal();
+
+    showToast(
+      "Publication envoyée dans le fil d'actualité 🚀"
+    );
+
+    scrollToFeed();
+
+  } catch (error) {
+
+    console.error(
+      "Publication:",
+      error
+    );
+
+    showToast(
+      "Impossible de publier. Vérifie Firestore."
+    );
+  }
 };
 
 
-window.closePublish =
-function(){
+// ======================================================
+// FIL D'ACTUALITÉ
+// ======================================================
 
-  document
-    .getElementById("publishModal")
-    .classList.remove("show");
+function loadFeed() {
+
+  const feed =
+    document.getElementById(
+      "newsFeed"
+    );
+
+  if (!feed) return;
+
+
+  try {
+
+    const postsQuery =
+      query(
+        collection(
+          db,
+          "posts"
+        ),
+        orderBy(
+          "createdAt",
+          "desc"
+        ),
+        limit(50)
+      );
+
+
+    unsubscribeFeed =
+      onSnapshot(
+        postsQuery,
+
+        snapshot => {
+
+          feed.innerHTML = "";
+
+          if (snapshot.empty) {
+
+            feed.innerHTML =
+              createEmptyFeed();
+
+            return;
+          }
+
+
+          snapshot.forEach(
+            postSnapshot => {
+
+              const post =
+                postSnapshot.data();
+
+              const id =
+                postSnapshot.id;
+
+              feed.insertAdjacentHTML(
+                "beforeend",
+                createPostCard(
+                  post,
+                  id
+                )
+              );
+
+            }
+          );
+
+        },
+
+        error => {
+
+          console.error(
+            "Fil:",
+            error
+          );
+
+          feed.innerHTML =
+            `
+            <div class="feed-error">
+              ⚠️ Impossible de charger
+              le fil d'actualité.
+            </div>
+            `;
+        }
+      );
+
+  } catch (error) {
+
+    console.error(error);
+  }
+
+}
+
+
+// ======================================================
+// CARTE PUBLICATION
+// ======================================================
+
+function createPostCard(
+  post,
+  id
+) {
+
+  const author =
+    escapeHTML(
+      post.authorName ||
+      "Utilisateur FISSA"
+    );
+
+  const title =
+    escapeHTML(
+      post.title ||
+      "Nouvelle comparaison"
+    );
+
+  const description =
+    escapeHTML(
+      post.description ||
+      ""
+    );
+
+  const date =
+    formatDate(
+      post.createdAt
+    );
+
+  const likesA =
+    post.sideA?.likes || 0;
+
+  const likesB =
+    post.sideB?.likes || 0;
+
+
+  return `
+
+    <article
+      class="fissa-post"
+      data-post-id="${id}"
+    >
+
+      <div class="post-head">
+
+        <div class="post-avatar">
+
+          ${author.charAt(0).toUpperCase()}
+
+        </div>
+
+        <div class="post-user">
+
+          <strong>
+            ${author}
+          </strong>
+
+          <small>
+            ${date}
+          </small>
+
+        </div>
+
+        <span class="verified">
+          ✓
+        </span>
+
+      </div>
+
+
+      <div class="post-content">
+
+        <h3>
+          ${title}
+        </h3>
+
+        <p>
+          ${description}
+        </p>
+
+
+        <div class="vertical-comparison">
+
+
+          <!-- A -->
+
+          <div class="vertical-side side-a">
+
+            <div class="side-label">
+              <span>A</span>
+              CRÉATION A
+            </div>
+
+            <div class="post-media">
+
+              <div class="media-empty">
+
+                <span>
+                  A
+                </span>
+
+                <small>
+                  Média A
+                </small>
+
+              </div>
+
+            </div>
+
+            <button
+              class="play-button"
+              type="button"
+              onclick="playPostMedia(this,'A')"
+            >
+              ▶
+            </button>
+
+            <button
+              class="sound-button"
+              type="button"
+              onclick="togglePostSound(this)"
+            >
+              🔊
+            </button>
+
+            <button
+              class="post-vote vote-a"
+              type="button"
+              onclick="votePost('${id}','A',this)"
+            >
+              ❤️ A
+              <b>${likesA}</b>
+            </button>
+
+          </div>
+
+
+          <!-- VS -->
+
+          <div class="vertical-vs">
+            VS
+          </div>
+
+
+          <!-- B -->
+
+          <div class="vertical-side side-b">
+
+            <div class="side-label">
+              <span>B</span>
+              CRÉATION B
+            </div>
+
+            <div class="post-media">
+
+              <div class="media-empty">
+
+                <span>
+                  B
+                </span>
+
+                <small>
+                  Média B
+                </small>
+
+              </div>
+
+            </div>
+
+            <button
+              class="play-button"
+              type="button"
+              onclick="playPostMedia(this,'B')"
+            >
+              ▶
+            </button>
+
+            <button
+              class="sound-button"
+              type="button"
+              onclick="togglePostSound(this)"
+            >
+              🔊
+            </button>
+
+            <button
+              class="post-vote vote-b"
+              type="button"
+              onclick="votePost('${id}','B',this)"
+            >
+              ❤️ B
+              <b>${likesB}</b>
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <!-- SCORE -->
+
+        <div class="post-score">
+
+          <span>
+            A
+          </span>
+
+          <div class="mini-score">
+
+            <div
+              class="mini-score-a"
+              style="width:50%"
+            ></div>
+
+            <div
+              class="mini-score-b"
+              style="width:50%"
+            ></div>
+
+          </div>
+
+          <span>
+            B
+          </span>
+
+        </div>
+
+
+        <!-- ACTIONS -->
+
+        <div class="post-actions">
+
+          <button
+            type="button"
+            onclick="openPostComments('${id}')"
+          >
+            💬 Commenter
+          </button>
+
+          <button
+            type="button"
+            onclick="sharePost('${id}')"
+          >
+            ↗ Partager
+          </button>
+
+          <button
+            type="button"
+            onclick="openPostMenu('${id}')"
+          >
+            ⋮
+          </button>
+
+        </div>
+
+
+        <div
+          id="comments-${id}"
+          class="post-comments hidden"
+        >
+
+          <input
+            id="comment-${id}"
+            type="text"
+            placeholder="Écrire un commentaire..."
+            maxlength="250"
+          >
+
+          <button
+            type="button"
+            onclick="sendPostComment('${id}')"
+          >
+            Envoyer
+          </button>
+
+          <div
+            id="comment-list-${id}"
+          ></div>
+
+        </div>
+
+      </div>
+
+    </article>
+
+  `;
+
+}
+
+
+// ======================================================
+// VOTE PUBLICATION
+// ======================================================
+
+window.votePost =
+async function(
+  postId,
+  side,
+  button
+) {
+
+  if (!currentUser) {
+
+    openAuth("login");
+
+    showToast(
+      "Connecte-toi pour voter."
+    );
+
+    return;
+  }
+
+
+  try {
+
+    const postRef =
+      doc(
+        db,
+        "posts",
+        postId
+      );
+
+
+    const field =
+      side === "A"
+        ? "sideA.likes"
+        : "sideB.likes";
+
+
+    await updateDoc(
+      postRef,
+      {
+        [field]:
+          increment(1),
+
+        totalLikes:
+          increment(1)
+      }
+    );
+
+
+    button.classList.add(
+      "active"
+    );
+
+
+    showToast(
+      "Vote pour " +
+      side +
+      " enregistré ❤️"
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Vote:",
+      error
+    );
+
+    showToast(
+      "Erreur lors du vote."
+    );
+  }
 
 };
 
 
 // ======================================================
-// PREVIEW UPLOAD
+// COMMENTAIRES PUBLICATION
 // ======================================================
 
-window.previewUpload =
-function(side,input){
-
-  const file =
-    input.files[0];
-
-  if(!file) return;
+window.openPostComments =
+function(postId) {
 
   const box =
     document.getElementById(
-      "preview" + side
+      "comments-" +
+      postId
     );
 
-  const url =
-    URL.createObjectURL(file);
+  if (!box) return;
 
-  if(file.type.startsWith("video/")){
+  box.classList.toggle(
+    "hidden"
+  );
 
-    box.innerHTML =
-      `<video src="${url}" controls></video>`;
+  if (!box.classList.contains("hidden")) {
 
-  }else{
-
-    box.innerHTML =
-      `<img src="${url}" alt="Aperçu ${side}">`;
-
+    document
+      .getElementById(
+        "comment-" +
+        postId
+      )
+      ?.focus();
   }
 
 };
 
 
 // ======================================================
-// PUBLICATION
+// ENVOYER COMMENTAIRE
 // ======================================================
 
-window.publishComparison =
-async function(){
+window.sendPostComment =
+async function(postId) {
 
-  if(!currentUser){
-
-    closePublish();
+  if (!currentUser) {
 
     openAuth("login");
 
     return;
-
   }
-
-  const title =
-    document
-      .getElementById("publishTitle")
-      .value
-      .trim();
-
-  const description =
-    document
-      .getElementById("publishDescription")
-      .value
-      .trim();
-
-  const category =
-    document
-      .getElementById("publishCategory")
-      .value;
-
-  const fileA =
-    document
-      .getElementById("fileA")
-      .files[0];
-
-  const fileB =
-    document
-      .getElementById("fileB")
-      .files[0];
-
-  const song =
-    document
-      .getElementById("songEnabled")
-      .checked;
-
-  if(!title){
-
-    showToast(
-      "Ajoute un titre."
-    );
-
-    return;
-
-  }
-
-  if(!fileA || !fileB){
-
-    showToast(
-      "Ajoute les médias A et B."
-    );
-
-    return;
-
-  }
-
-  showToast(
-    "Préparation de la publication..."
-  );
-
-
-  const mediaA =
-    await fileToData(fileA);
-
-  const mediaB =
-    await fileToData(fileB);
-
-
-  const post = {
-
-    id:
-      "post-" +
-      Date.now(),
-
-    title,
-
-    description,
-
-    category,
-
-    author:
-      currentUser.displayName ||
-      currentUser.email ||
-      "Utilisateur FISSA",
-
-    authorUid:
-      currentUser.uid,
-
-    authorAvatar:
-      (
-        currentUser.displayName ||
-        currentUser.email ||
-        "U"
-      )
-      .charAt(0)
-      .toUpperCase(),
-
-    ai:false,
-
-    mediaA,
-
-    mediaB,
-
-    typeA:
-      fileA.type.startsWith("video/")
-        ? "video"
-        : "image",
-
-    typeB:
-      fileB.type.startsWith("video/")
-        ? "video"
-        : "image",
-
-    likesA:0,
-    likesB:0,
-
-    comments:[],
-
-    song,
-
-    createdAt:
-      Date.now()
-
-  };
-
-
-  localPosts.unshift(post);
-
-  saveLocalPosts();
-
-  await savePostToFirestore(post);
-
-  closePublish();
-
-  resetPublishForm();
-
-  renderFeed();
-
-  showToast(
-    "Publication ajoutée au fil FISSA 🚀"
-  );
-
-};
-
-
-// ======================================================
-// CONVERT FILE
-// ======================================================
-
-function fileToData(file){
-
-  return new Promise(
-    resolve => {
-
-      const reader =
-        new FileReader();
-
-      reader.onload =
-        e =>
-          resolve(e.target.result);
-
-      reader.readAsDataURL(file);
-
-    }
-  );
-
-}
-
-
-// ======================================================
-// FIRESTORE
-// ======================================================
-
-async function savePostToFirestore(post){
-
-  if(!db){
-
-    console.warn(
-      "Firestore db non disponible."
-    );
-
-    return;
-
-  }
-
-  try{
-
-    // Compatible si firebase.js expose une fonction
-    // saveFissaPost personnalisée.
-
-    if(
-      typeof Firebase.saveFissaPost ===
-      "function"
-    ){
-
-      await Firebase.saveFissaPost(post);
-
-      return;
-
-    }
-
-    console.warn(
-      "Ajoute saveFissaPost dans firebase.js pour Firestore."
-    );
-
-  }catch(error){
-
-    console.error(
-      "Firestore:",
-      error
-    );
-
-  }
-
-}
-
-
-// ======================================================
-// LOCAL STORAGE
-// ======================================================
-
-function saveLocalPosts(){
-
-  try{
-
-    localStorage.setItem(
-      "fissa_posts",
-      JSON.stringify(localPosts)
-    );
-
-  }catch(error){
-
-    console.warn(
-      "Stockage local limité:",
-      error
-    );
-
-  }
-
-}
-
-
-// ======================================================
-// GET POSTS
-// ======================================================
-
-function getPosts(){
-
-  const combined =
-    [
-      ...localPosts,
-      ...demoPosts
-    ];
-
-  const ids =
-    new Set();
-
-  return combined
-    .filter(
-      post => {
-
-        if(ids.has(post.id))
-          return false;
-
-        ids.add(post.id);
-
-        return true;
-
-      }
-    )
-    .sort(
-      (a,b) =>
-        b.createdAt -
-        a.createdAt
-    );
-
-}
-
-
-// ======================================================
-// FILTRE
-// ======================================================
-
-window.setFilter =
-function(filter,button){
-
-  currentFilter =
-    filter;
-
-  document
-    .querySelectorAll(".filter")
-    .forEach(
-      item =>
-        item.classList.remove(
-          "active"
-        )
-    );
-
-  button.classList.add(
-    "active"
-  );
-
-  renderFeed();
-
-};
-
-
-// ======================================================
-// SEARCH
-// ======================================================
-
-window.searchPosts =
-function(value){
-
-  renderFeed(
-    value.trim().toLowerCase()
-  );
-
-};
-
-
-// ======================================================
-// RENDER FEED
-// ======================================================
-
-function renderFeed(search=""){
-
-  const feed =
-    document.getElementById(
-      "feedList"
-    );
-
-  if(!feed) return;
-
-  let posts =
-    getPosts();
-
-
-  if(currentFilter !== "all"){
-
-    posts =
-      posts.filter(
-        post =>
-          post.category ===
-          currentFilter
-      );
-
-  }
-
-
-  if(search){
-
-    posts =
-      posts.filter(
-        post =>
-          (
-            post.title +
-            " " +
-            post.description +
-            " " +
-            post.author
-          )
-          .toLowerCase()
-          .includes(search)
-      );
-
-  }
-
-
-  document
-    .getElementById("postCount")
-    .textContent =
-      posts.length +
-      (
-        posts.length > 1
-          ? " publications"
-          : " publication"
-      );
-
-
-  if(!posts.length){
-
-    feed.innerHTML =
-      `
-      <div class="empty">
-        <div style="font-size:40px">🔎</div>
-        <p>Aucune publication trouvée.</p>
-      </div>
-      `;
-
-    return;
-
-  }
-
-
-  feed.innerHTML =
-    posts
-      .map(
-        post =>
-          createPostHTML(post)
-      )
-      .join("");
-
-
-  posts.forEach(
-    post =>
-      preparePostMedia(post)
-  );
-
-}
-
-
-// ======================================================
-// POST HTML
-// ======================================================
-
-function createPostHTML(post){
-
-  const total =
-    post.likesA +
-    post.likesB;
-
-  const percentA =
-    total
-      ? Math.round(
-          post.likesA /
-          total *
-          100
-        )
-      : 50;
-
-  const percentB =
-    100 -
-    percentA;
-
-
-  return `
-
-  <article
-    class="post"
-    id="post-${escapeHTML(post.id)}"
-  >
-
-    <div class="post-head">
-
-      <div class="post-avatar">
-        ${escapeHTML(
-          post.authorAvatar ||
-          "U"
-        )}
-      </div>
-
-      <div class="post-user">
-
-        <strong>
-          ${escapeHTML(post.author)}
-        </strong>
-
-        <small>
-          ${timeAgo(post.createdAt)}
-        </small>
-
-      </div>
-
-      ${
-        post.ai
-          ? `<span class="ai-badge">🤖 FISSA AI</span>`
-          : ""
-      }
-
-      <span class="category-badge">
-        ${
-          categoryNames[
-            post.category
-          ] ||
-          "🌍 Monde"
-        }
-      </span>
-
-    </div>
-
-
-    <div class="post-content">
-
-      <h2>
-        ${escapeHTML(post.title)}
-      </h2>
-
-      <p>
-        ${escapeHTML(
-          post.description || ""
-        )}
-      </p>
-
-    </div>
-
-
-    <div class="ab-grid">
-
-      ${createSideHTML(
-        post,
-        "A"
-      )}
-
-      ${createSideHTML(
-        post,
-        "B"
-      )}
-
-    </div>
-
-
-    ${
-      post.song
-        ? `
-        <button
-          class="song-button show"
-          onclick="playSong('${escapeHTML(post.id)}')"
-        >
-          🎵 Song
-        </button>
-        `
-        : ""
-    }
-
-
-    <div class="score">
-
-      <div class="score-info">
-
-        <span>
-          🔵 A ${percentA}%
-        </span>
-
-        <span>
-          ${percentB}% B 🔴
-        </span>
-
-      </div>
-
-      <div class="score-bar">
-
-        <div
-          id="scoreA-${escapeHTML(post.id)}"
-          class="score-a"
-          style="width:${percentA}%"
-        ></div>
-
-        <div
-          id="scoreB-${escapeHTML(post.id)}"
-          class="score-b"
-          style="width:${percentB}%"
-        ></div>
-
-      </div>
-
-    </div>
-
-
-    <div class="post-actions">
-
-      <button
-        class="post-action"
-        onclick="votePost('${escapeHTML(post.id)}','A',this)"
-      >
-        ❤️ A
-        <span>
-          ${post.likesA}
-        </span>
-      </button>
-
-      <button
-        class="post-action"
-        onclick="votePost('${escapeHTML(post.id)}','B',this)"
-      >
-        ❤️ B
-        <span>
-          ${post.likesB}
-        </span>
-      </button>
-
-      <button
-        class="post-action"
-        onclick="openComments('${escapeHTML(post.id)}')"
-      >
-        💬 Commenter
-      </button>
-
-      <button
-        class="post-action"
-        onclick="sharePost('${escapeHTML(post.id)}')"
-      >
-        ↗ Partager
-      </button>
-
-    </div>
-
-  </article>
-
-  `;
-
-}
-
-
-// ======================================================
-// SIDE A / B
-// ======================================================
-
-function createSideHTML(post,side){
-
-  const media =
-    side === "A"
-      ? post.mediaA
-      : post.mediaB;
-
-  const type =
-    side === "A"
-      ? post.typeA
-      : post.typeB;
-
-
-  let mediaHTML =
-    `
-    <div class="media-placeholder-inner">
-      🎬
-    </div>
-    `;
-
-
-  if(media){
-
-    if(type === "video"){
-
-      mediaHTML =
-        `
-        <video
-          id="video-${post.id}-${side}"
-          class="side-media"
-          playsinline
-          preload="metadata"
-          src="${media}"
-        ></video>
-        `;
-
-    }else{
-
-      mediaHTML =
-        `
-        <img
-          class="side-media"
-          src="${media}"
-          alt="Création ${side}"
-        >
-        `;
-
-    }
-
-  }
-
-
-  return `
-
-  <div
-    class="side side-${side.toLowerCase()}"
-    data-post="${escapeHTML(post.id)}"
-  >
-
-    <div class="side-label">
-      ${side}
-    </div>
-
-    ${mediaHTML}
-
-    ${
-      type === "video"
-        ? `
-        <button
-          class="media-controls play-big"
-          onclick="toggleVideo('${escapeHTML(post.id)}','${side}',this)"
-        >
-          ▶
-        </button>
-
-        <div class="media-controls">
-
-          <span></span>
-
-          <button
-            onclick="toggleMute('${escapeHTML(post.id)}','${side}')"
-          >
-            🔊
-          </button>
-
-        </div>
-        `
-        : ""
-    }
-
-  </div>
-
-  `;
-
-}
-
-
-// ======================================================
-// PREPARE MEDIA
-// ======================================================
-
-function preparePostMedia(post){
-
-  if(
-    post.typeA === "video"
-  ){
-
-    const video =
-      document.getElementById(
-        `video-${post.id}-A`
-      );
-
-    if(video){
-
-      video.addEventListener(
-        "ended",
-        () => {
-
-          const button =
-            video.parentElement
-              .querySelector(
-                ".play-big"
-              );
-
-          if(button)
-            button.textContent = "▶";
-
-        }
-      );
-
-    }
-
-  }
-
-}
-
-
-// ======================================================
-// PLAY VIDEO
-// ======================================================
-
-window.toggleVideo =
-function(id,side,button){
-
-  const video =
-    document.getElementById(
-      `video-${id}-${side}`
-    );
-
-  if(!video) return;
-
-  if(video.paused){
-
-    video.play()
-      .then(
-        () => {
-
-          button.textContent =
-            "❚❚";
-
-          button.classList.add(
-            "playing"
-          );
-
-        }
-      )
-      .catch(
-        () =>
-          showToast(
-            "Appuie encore sur ▶️"
-          )
-      );
-
-  }else{
-
-    video.pause();
-
-    button.textContent =
-      "▶";
-
-    button.classList.remove(
-      "playing"
-    );
-
-  }
-
-};
-
-
-// ======================================================
-// MUTE
-// ======================================================
-
-window.toggleMute =
-function(id,side){
-
-  const video =
-    document.getElementById(
-      `video-${id}-${side}`
-    );
-
-  if(!video) return;
-
-  video.muted =
-    !video.muted;
-
-  showToast(
-    video.muted
-      ? "Son désactivé 🔇"
-      : "Son activé 🔊"
-  );
-
-};
-
-
-// ======================================================
-// SONG
-// ======================================================
-
-window.playSong =
-function(id){
-
-  showToast(
-    "🎵 Lecteur Song FISSA — audio à connecter"
-  );
-
-};
-
-
-// ======================================================
-// VOTE
-// ======================================================
-
-window.votePost =
-function(id,side,button){
-
-  const post =
-    getPosts()
-      .find(
-        p =>
-          p.id === id
-      );
-
-  if(!post) return;
-
-
-  if(side === "A"){
-
-    post.likesA++;
-
-  }else{
-
-    post.likesB++;
-
-  }
-
-
-  updateLocalPost(post);
-
-  renderFeed();
-
-  showToast(
-    `Vote pour ${side} enregistré ❤️`
-  );
-
-};
-
-
-// ======================================================
-// UPDATE LOCAL POST
-// ======================================================
-
-function updateLocalPost(post){
-
-  const index =
-    localPosts.findIndex(
-      p =>
-        p.id === post.id
-    );
-
-  if(index >= 0){
-
-    localPosts[index] =
-      post;
-
-    saveLocalPosts();
-
-  }
-
-}
-
-
-// ======================================================
-// COMMENTS
-// ======================================================
-
-window.openComments =
-function(id){
-
-  currentCommentPost =
-    id;
-
-  const post =
-    getPosts()
-      .find(
-        p =>
-          p.id === id
-      );
-
-  if(!post) return;
-
-
-  const list =
-    document.getElementById(
-      "modalComments"
-    );
-
-  list.innerHTML =
-    "";
-
-
-  if(
-    !post.comments ||
-    !post.comments.length
-  ){
-
-    list.innerHTML =
-      `
-      <div class="empty">
-        Aucun commentaire pour le moment.
-      </div>
-      `;
-
-  }else{
-
-    post.comments
-      .forEach(
-        comment => {
-
-          const item =
-            document.createElement(
-              "div"
-            );
-
-          item.className =
-            "modal-comment";
-
-          item.innerHTML =
-            `
-            <strong>
-              ${escapeHTML(
-                comment.author
-              )}
-            </strong>
-            <br>
-            ${escapeHTML(
-              comment.text
-            )}
-            `;
-
-          list.appendChild(
-            item
-          );
-
-        }
-      );
-
-  }
-
-
-  document
-    .getElementById(
-      "commentModal"
-    )
-    .classList.add("show");
-
-};
-
-
-window.closeComment =
-function(){
-
-  document
-    .getElementById(
-      "commentModal"
-    )
-    .classList.remove("show");
-
-};
-
-
-// ======================================================
-// SEND COMMENT
-// ======================================================
-
-window.sendComment =
-function(event){
-
-  event.preventDefault();
-
-  if(!currentCommentPost)
-    return;
 
 
   const input =
     document.getElementById(
-      "modalCommentInput"
+      "comment-" +
+      postId
     );
+
+  if (!input) return;
+
 
   const text =
     input.value.trim();
 
-  if(!text)
-    return;
+
+  if (!text) return;
 
 
-  const post =
-    getPosts()
-      .find(
-        p =>
-          p.id ===
-          currentCommentPost
+  try {
+
+    await addDoc(
+      collection(
+        db,
+        "posts",
+        postId,
+        "comments"
+      ),
+      {
+
+        text,
+
+        authorId:
+          currentUser.uid,
+
+        authorName:
+          currentUser.displayName ||
+          currentUser.email ||
+          "Utilisateur",
+
+        createdAt:
+          serverTimestamp()
+
+      }
+    );
+
+
+    await updateDoc(
+      doc(
+        db,
+        "posts",
+        postId
+      ),
+      {
+        comments:
+          increment(1)
+      }
+    );
+
+
+    input.value = "";
+
+    showToast(
+      "Commentaire publié 💬"
+    );
+
+    loadPostComments(
+      postId
+    );
+
+  } catch (error) {
+
+    console.error(
+      error
+    );
+
+    showToast(
+      "Impossible de publier le commentaire."
+    );
+  }
+
+};
+
+
+// ======================================================
+// CHARGER COMMENTAIRES
+// ======================================================
+
+async function loadPostComments(
+  postId
+) {
+
+  const container =
+    document.getElementById(
+      "comment-list-" +
+      postId
+    );
+
+  if (!container) return;
+
+
+  try {
+
+    const commentsQuery =
+      query(
+        collection(
+          db,
+          "posts",
+          postId,
+          "comments"
+        ),
+        orderBy(
+          "createdAt",
+          "desc"
+        ),
+        limit(30)
       );
 
-  if(!post)
+
+    const snapshot =
+      await getDocs(
+        commentsQuery
+      );
+
+
+    container.innerHTML = "";
+
+
+    snapshot.forEach(
+      item => {
+
+        const data =
+          item.data();
+
+        const name =
+          escapeHTML(
+            data.authorName ||
+            "Utilisateur"
+          );
+
+        const text =
+          escapeHTML(
+            data.text ||
+            ""
+          );
+
+        container.insertAdjacentHTML(
+          "beforeend",
+
+          `
+          <div class="post-comment-item">
+
+            <strong>
+              ${name}
+            </strong>
+
+            <span>
+              ${text}
+            </span>
+
+          </div>
+          `
+        );
+
+      }
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Commentaires:",
+      error
+    );
+  }
+
+}
+
+
+// ======================================================
+// PARTAGE
+// ======================================================
+
+window.sharePost =
+async function(postId) {
+
+  const url =
+    window.location.origin +
+    window.location.pathname +
+    "?post=" +
+    encodeURIComponent(
+      postId
+    );
+
+
+  try {
+
+    if (navigator.share) {
+
+      await navigator.share({
+
+        title:
+          "FISSA",
+
+        text:
+          "Regarde cette comparaison sur FISSA.",
+
+        url
+
+      });
+
+    } else {
+
+      await navigator.clipboard.writeText(
+        url
+      );
+
+      showToast(
+        "Lien de publication copié 🔗"
+      );
+    }
+
+  } catch (error) {
+
+    console.log(error);
+  }
+
+};
+
+
+// ======================================================
+// MENU PUBLICATION
+// ======================================================
+
+window.openPostMenu =
+function(postId) {
+
+  showToast(
+    "Publication FISSA #" +
+    postId.substring(0, 6)
+  );
+
+};
+
+
+// ======================================================
+// PLAY
+// ======================================================
+
+window.playPostMedia =
+function(button, side) {
+
+  const card =
+    button.closest(
+      ".vertical-side"
+    );
+
+  if (!card) return;
+
+
+  const media =
+    card.querySelector(
+      ".post-media"
+    );
+
+
+  if (!media) return;
+
+
+  media.classList.toggle(
+    "playing"
+  );
+
+
+  if (
+    media.classList.contains(
+      "playing"
+    )
+  ) {
+
+    button.textContent =
+      "❚❚";
+
+    showToast(
+      "Lecture " +
+      side +
+      " ▶️"
+    );
+
+  } else {
+
+    button.textContent =
+      "▶";
+  }
+
+};
+
+
+// ======================================================
+// SON
+// ======================================================
+
+window.togglePostSound =
+function(button) {
+
+  const card =
+    button.closest(
+      ".vertical-side"
+    );
+
+  if (!card) return;
+
+
+  const media =
+    card.querySelector(
+      ".post-media"
+    );
+
+
+  const muted =
+    media?.classList.toggle(
+      "muted"
+    );
+
+
+  button.textContent =
+    muted
+      ? "🔇"
+      : "🔊";
+
+};
+
+
+// ======================================================
+// STORIES
+// ======================================================
+
+window.createStory =
+async function() {
+
+  if (!currentUser) {
+
+    openAuth("login");
+
     return;
+  }
 
 
-  if(!post.comments)
-    post.comments = [];
+  const text =
+    prompt(
+      "Écris ta story FISSA :"
+    );
 
 
-  post.comments.push({
+  if (!text) return;
 
-    author:
-      currentUser
-        ? (
-            currentUser.displayName ||
-            currentUser.email
-          )
-        : "Visiteur",
 
-    text,
+  try {
 
-    createdAt:
-      Date.now()
+    await addDoc(
+      collection(
+        db,
+        "stories"
+      ),
+      {
 
+        text:
+
+          text.trim(),
+
+        authorId:
+          currentUser.uid,
+
+        authorName:
+          currentUser.displayName ||
+          currentUser.email ||
+          "Utilisateur",
+
+        createdAt:
+          serverTimestamp(),
+
+        expiresAt:
+          Date.now() +
+          24 * 60 * 60 * 1000
+      }
+    );
+
+
+    showToast(
+      "Story publiée pour 24h 📖"
+    );
+
+    loadStories();
+
+  } catch (error) {
+
+    console.error(
+      error
+    );
+
+    showToast(
+      "Impossible de publier la story."
+    );
+  }
+
+};
+
+
+// ======================================================
+// CHARGER STORIES
+// ======================================================
+
+async function loadStories() {
+
+  const container =
+    document.getElementById(
+      "storiesContainer"
+    );
+
+  if (!container) return;
+
+
+  try {
+
+    const storiesQuery =
+      query(
+        collection(
+          db,
+          "stories"
+        ),
+        orderBy(
+          "createdAt",
+          "desc"
+        ),
+        limit(30)
+      );
+
+
+    const snapshot =
+      await getDocs(
+        storiesQuery
+      );
+
+
+    container.innerHTML = `
+
+      <button
+        class="story-add"
+        type="button"
+        onclick="createStory()"
+      >
+        ＋
+        <small>
+          Ma story
+        </small>
+      </button>
+
+    `;
+
+
+    snapshot.forEach(
+      item => {
+
+        const story =
+          item.data();
+
+
+        if (
+          story.expiresAt &&
+          story.expiresAt <
+          Date.now()
+        ) {
+          return;
+        }
+
+
+        const name =
+          escapeHTML(
+            story.authorName ||
+            "FISSA"
+          );
+
+
+        const text =
+          escapeHTML(
+            story.text ||
+            ""
+          );
+
+
+        container.insertAdjacentHTML(
+          "beforeend",
+
+          `
+          <button
+            class="story"
+            type="button"
+            onclick="viewStory(
+              '${item.id}'
+            )"
+          >
+
+            <span class="story-avatar">
+              ${name
+                .charAt(0)
+                .toUpperCase()}
+            </span>
+
+            <strong>
+              ${name}
+            </strong>
+
+          </button>
+          `
+        );
+
+      }
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Stories:",
+      error
+    );
+  }
+
+}
+
+
+// ======================================================
+// VOIR STORY
+// ======================================================
+
+window.viewStory =
+async function(storyId) {
+
+  try {
+
+    const snapshot =
+      await getDoc(
+        doc(
+          db,
+          "stories",
+          storyId
+        )
+      );
+
+
+    if (!snapshot.exists()) {
+
+      showToast(
+        "Story introuvable."
+      );
+
+      return;
+    }
+
+
+    const data =
+      snapshot.data();
+
+
+    alert(
+      (
+        data.authorName ||
+        "FISSA"
+      ) +
+      "\n\n" +
+      (
+        data.text ||
+        ""
+      )
+    );
+
+  } catch (error) {
+
+    console.error(
+      error
+    );
+  }
+
+};
+
+
+// ======================================================
+// FISSA AI
+// ======================================================
+
+async function createFissaAI() {
+
+  const aiId =
+    "fissa-ai-official";
+
+
+  try {
+
+    const aiRef =
+      doc(
+        db,
+        "users",
+        aiId
+      );
+
+
+    await setDoc(
+      aiRef,
+      {
+
+        uid:
+          aiId,
+
+        name:
+          "FISSA AI",
+
+        email:
+          "ai@fissa.app",
+
+        photoURL:
+          "",
+
+        verified:
+          true,
+
+        type:
+          "ai",
+
+        bio:
+          "Assistant officiel de la communauté FISSA.",
+
+        updatedAt:
+          serverTimestamp()
+
+      },
+      {
+        merge: true
+      }
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "FISSA AI:",
+      error
+    );
+  }
+
+}
+
+
+// ======================================================
+// PUBLICATION FISSA AI
+// ======================================================
+
+window.publishFissaAI =
+async function(
+  title,
+  description
+) {
+
+  try {
+
+    await addDoc(
+      collection(
+        db,
+        "posts"
+      ),
+      {
+
+        title,
+
+        description,
+
+        authorId:
+          "fissa-ai-official",
+
+        authorName:
+          "FISSA AI",
+
+        authorPhoto:
+          "",
+
+        verified:
+          true,
+
+        type:
+          "ai",
+
+        sideA: {
+          title:
+            "Création A",
+          likes: 0
+        },
+
+        sideB: {
+          title:
+            "Création B",
+          likes: 0
+        },
+
+        totalLikes:
+          0,
+
+        comments:
+          0,
+
+        shares:
+          0,
+
+        category:
+          "FISSA AI",
+
+        createdAt:
+          serverTimestamp()
+      }
+    );
+
+
+    showToast(
+      "FISSA AI a publié 🤖🚀"
+    );
+
+  } catch (error) {
+
+    console.error(
+      error
+    );
+
+    showToast(
+      "Erreur publication FISSA AI."
+    );
+  }
+
+};
+
+
+// ======================================================
+// OUVRIR PUBLICATION
+// ======================================================
+
+function scrollToFeed() {
+
+  const feed =
+    document.getElementById(
+      "newsFeed"
+    );
+
+  if (!feed) return;
+
+  feed.scrollIntoView({
+    behavior:
+      "smooth"
   });
 
+}
 
-  updateLocalPost(post);
+
+window.scrollToFeed =
+scrollToFeed;
+
+
+// ======================================================
+// NAVIGATION COMPARAISON
+// ======================================================
+
+window.scrollToComparison =
+function() {
+
+  const element =
+    document.getElementById(
+      "comparison"
+    );
+
+  if (element) {
+
+    element.scrollIntoView({
+      behavior:
+        "smooth"
+    });
+
+  } else {
+
+    scrollToFeed();
+
+  }
+
+};
+
+
+// ======================================================
+// COMMENTAIRES ANCIEN SYSTÈME
+// ======================================================
+
+window.addComment =
+function(event) {
+
+  event.preventDefault();
+
+
+  const input =
+    document.getElementById(
+      "commentInput"
+    );
+
+
+  if (!input) return;
+
+
+  const text =
+    input.value.trim();
+
+
+  if (!text) return;
+
+
+  const list =
+    document.getElementById(
+      "commentsList"
+    );
+
+
+  if (!list) return;
+
+
+  const comment =
+    document.createElement(
+      "div"
+    );
+
+
+  comment.className =
+    "comment";
+
+
+  const strong =
+    document.createElement(
+      "strong"
+    );
+
+
+  strong.textContent =
+    currentUser
+      ? (
+          currentUser.displayName ||
+          currentUser.email
+        )
+      : "Visiteur";
+
+
+  comment.appendChild(
+    strong
+  );
+
+
+  comment.appendChild(
+    document.createTextNode(
+      " " + text
+    )
+  );
+
+
+  list.prepend(
+    comment
+  );
+
 
   input.value = "";
-
-  openComments(
-    currentCommentPost
-  );
 
   showToast(
     "Commentaire publié 💬"
@@ -1775,118 +2114,310 @@ function(event){
 
 
 // ======================================================
-// SHARE
+// COMMENTER A / B
 // ======================================================
 
-window.sharePost =
-async function(id){
+window.commentFor =
+function(side) {
 
-  const post =
-    getPosts()
-      .find(
-        p =>
-          p.id === id
-      );
+  const input =
+    document.getElementById(
+      "commentInput"
+    );
 
-  if(!post)
-    return;
+  if (!input) return;
 
 
-  const data = {
-
-    title:
-      "FISSA — " +
-      post.title,
-
-    text:
-      "Regarde cette comparaison sur FISSA 🌍",
-
-    url:
-      window.location.href +
-      "#post-" +
-      id
-
-  };
+  input.placeholder =
+    "Ton avis sur la création " +
+    side +
+    "...";
 
 
-  try{
+  input.focus();
 
-    if(navigator.share){
 
-      await navigator.share(
-        data
-      );
+  const comments =
+    document.getElementById(
+      "comments"
+    );
 
-    }else{
-
-      await navigator.clipboard.writeText(
-        data.url
-      );
-
-      showToast(
-        "Lien copié 📋"
-      );
-
-    }
-
-  }catch(error){
-
-    console.log(error);
-
-  }
+  comments?.scrollIntoView({
+    behavior:
+      "smooth"
+  });
 
 };
 
 
 // ======================================================
-// RESET PUBLISH
+// ANCIEN SYSTÈME VOTE
 // ======================================================
 
-function resetPublishForm(){
+window.vote =
+function(side, button) {
 
-  document.getElementById(
-    "publishTitle"
-  ).value = "";
+  likes[side]++;
 
-  document.getElementById(
-    "publishDescription"
-  ).value = "";
 
-  document.getElementById(
-    "fileA"
-  ).value = "";
+  const counter =
+    document.getElementById(
+      "likes" +
+      side
+    );
 
-  document.getElementById(
-    "fileB"
-  ).value = "";
 
-  document.getElementById(
-    "songEnabled"
-  ).checked = false;
+  if (counter)
+    counter.textContent =
+      likes[side];
 
-  document.getElementById(
-    "previewA"
-  ).innerHTML = "🎬";
 
-  document.getElementById(
-    "previewB"
-  ).innerHTML = "🎬";
+  button?.classList.add(
+    "active"
+  );
+
+
+  updateScore();
+
+
+  showToast(
+    "Ton vote pour " +
+    side +
+    " ❤️"
+  );
+
+};
+
+
+// ======================================================
+// SCORE A/B
+// ======================================================
+
+function updateScore() {
+
+  const total =
+    likes.A +
+    likes.B;
+
+
+  let percentA =
+    50;
+
+  let percentB =
+    50;
+
+
+  if (total > 0) {
+
+    percentA =
+      Math.round(
+        likes.A /
+        total *
+        100
+      );
+
+    percentB =
+      100 -
+      percentA;
+  }
+
+
+  const scoreA =
+    document.getElementById(
+      "scoreA"
+    );
+
+  const scoreB =
+    document.getElementById(
+      "scoreB"
+    );
+
+
+  const percentAElement =
+    document.getElementById(
+      "percentA"
+    );
+
+  const percentBElement =
+    document.getElementById(
+      "percentB"
+    );
+
+
+  if (scoreA)
+    scoreA.style.width =
+      percentA + "%";
+
+
+  if (scoreB)
+    scoreB.style.width =
+      percentB + "%";
+
+
+  if (percentAElement)
+    percentAElement.textContent =
+      percentA + "%";
+
+
+  if (percentBElement)
+    percentBElement.textContent =
+      percentB + "%";
 
 }
 
 
 // ======================================================
-// NAVIGATION
+// CHARGER MÉDIA A/B
 // ======================================================
 
-window.scrollToFeed =
-function(){
+window.loadMedia =
+function(
+  event,
+  side
+) {
+
+  const file =
+    event.target.files?.[0];
+
+
+  if (!file) return;
+
+
+  const image =
+    document.getElementById(
+      "image" +
+      side
+    );
+
+
+  const video =
+    document.getElementById(
+      "video" +
+      side
+    );
+
+
+  const placeholder =
+    document.getElementById(
+      "placeholder" +
+      side
+    );
+
+
+  const url =
+    URL.createObjectURL(
+      file
+    );
+
+
+  if (image)
+    image.style.display =
+      "none";
+
+
+  if (video)
+    video.style.display =
+      "none";
+
+
+  if (
+    file.type.startsWith(
+      "image/"
+    )
+  ) {
+
+    if (image) {
+
+      image.src =
+        url;
+
+      image.style.display =
+        "block";
+    }
+
+  }
+
+
+  else if (
+    file.type.startsWith(
+      "video/"
+    )
+  ) {
+
+    if (video) {
+
+      video.src =
+        url;
+
+      video.style.display =
+        "block";
+
+      video.controls =
+        true;
+
+      video.playsInline =
+        true;
+    }
+
+  }
+
+
+  if (placeholder)
+    placeholder.style.display =
+      "none";
+
+
+  showToast(
+    "Média " +
+    side +
+    " ajoutée 📁"
+  );
+
+};
+
+
+// ======================================================
+// MODAL PUBLICATION
+// ======================================================
+
+window.openModal =
+function() {
+
+  const modal =
+    document.getElementById(
+      "modal"
+    );
+
+
+  if (!currentUser) {
+
+    openAuth("login");
+
+    showToast(
+      "Connecte-toi pour publier."
+    );
+
+    return;
+  }
+
+
+  modal?.classList.add(
+    "show"
+  );
+
+};
+
+
+window.closeModal =
+function() {
 
   document
-    .getElementById("feed")
-    .scrollIntoView({
-      behavior:"smooth"
-    });
+    .getElementById(
+      "modal"
+    )
+    ?.classList.remove(
+      "show"
+    );
 
 };
 
@@ -1896,30 +2427,47 @@ function(){
 // ======================================================
 
 window.showToast =
-function(message){
+function(message) {
 
   const toast =
     document.getElementById(
       "toast"
     );
 
+
+  if (!toast) {
+
+    console.log(
+      message
+    );
+
+    return;
+  }
+
+
   toast.textContent =
     message;
+
 
   toast.classList.add(
     "show"
   );
 
+
   clearTimeout(
     toastTimer
   );
 
+
   toastTimer =
     setTimeout(
-      () =>
+      () => {
+
         toast.classList.remove(
           "show"
-        ),
+        );
+
+      },
       2800
     );
 
@@ -1927,109 +2475,397 @@ function(message){
 
 
 // ======================================================
-// CLOSE MODALS ON BACKGROUND
+// FILTRE ACTUALITÉ
 // ======================================================
 
-document.addEventListener(
-  "click",
-  event => {
+window.filterFeed =
+function(category) {
 
-    if(
-      event.target.classList.contains(
-        "modal"
-      )
-    ){
+  const posts =
+    document.querySelectorAll(
+      ".fissa-post"
+    );
 
-      event.target.classList.remove(
-        "show"
-      );
+
+  posts.forEach(
+    post => {
+
+      if (
+        category === "all"
+      ) {
+
+        post.style.display =
+          "";
+
+      }
 
     }
+  );
+
+
+  showToast(
+    "Filtre : " +
+    category
+  );
+
+};
+
+
+// ======================================================
+// INTERFACE PROFESSIONNELLE
+// ======================================================
+
+function createProfessionalInterface() {
+
+  const main =
+    document.querySelector(
+      "main"
+    );
+
+
+  if (!main) return;
+
+
+  // STORIES
+
+  if (
+    !document.getElementById(
+      "storiesContainer"
+    )
+  ) {
+
+    const stories =
+      document.createElement(
+        "section"
+      );
+
+    stories.className =
+      "stories-section";
+
+
+    stories.innerHTML = `
+
+      <div class="section-title">
+
+        <h2>
+          🔥 Stories FISSA
+        </h2>
+
+        <button
+          type="button"
+          onclick="createStory()"
+        >
+          ＋ Ajouter
+        </button>
+
+      </div>
+
+      <div
+        id="storiesContainer"
+        class="stories-container"
+      ></div>
+
+    `;
+
+
+    main.prepend(
+      stories
+    );
 
   }
-);
 
 
-// ======================================================
-// ESCAPE HTML
-// ======================================================
+  // FIL ACTUALITÉ
 
-function escapeHTML(value){
+  if (
+    !document.getElementById(
+      "newsFeed"
+    )
+  ) {
 
-  return String(value ?? "")
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
+    const feed =
+      document.createElement(
+        "section"
+      );
+
+    feed.className =
+      "news-section";
+
+    feed.id =
+      "newsFeedSection";
+
+
+    feed.innerHTML = `
+
+      <div class="section-title">
+
+        <div>
+
+          <span class="section-badge">
+            ● LIVE
+          </span>
+
+          <h2>
+            📰 Fil d'actualité
+          </h2>
+
+        </div>
+
+        <button
+          type="button"
+          onclick="scrollToFeed()"
+        >
+          Actualiser
+        </button>
+
+      </div>
+
+
+      <div
+        class="feed-filters"
+      >
+
+        <button
+          class="active"
+          onclick="filterFeed('all')"
+        >
+          🌍 Tout
+        </button>
+
+        <button
+          onclick="filterFeed('video')"
+        >
+          🎬 Vidéos
+        </button>
+
+        <button
+          onclick="filterFeed('music')"
+        >
+          🎵 Musique
+        </button>
+
+        <button
+          onclick="filterFeed('comedy')"
+        >
+          😂 Comedy
+        </button>
+
+        <button
+          onclick="filterFeed('science')"
+        >
+          🧪 Science
+        </button>
+
+      </div>
+
+
+      <div
+        id="newsFeed"
+        class="news-feed"
+      >
+
+        <div class="feed-loading">
+          Chargement du fil...
+        </div>
+
+      </div>
+
+    `;
+
+
+    main.insertBefore(
+      feed,
+      main.querySelector(
+        ".comparison"
+      ) ||
+      main.firstChild
+    );
+
+  }
+
+
+  loadStories();
 
 }
 
 
 // ======================================================
-// TIME AGO
+// DATE
 // ======================================================
 
-function timeAgo(timestamp){
+function formatDate(
+  timestamp
+) {
 
-  const seconds =
+  if (
+    !timestamp ||
+    !timestamp.toDate
+  ) {
+
+    return "À l'instant";
+  }
+
+
+  const date =
+    timestamp.toDate();
+
+
+  const now =
+    new Date();
+
+
+  const diff =
     Math.floor(
       (
-        Date.now() -
-        timestamp
-      ) / 1000
+        now -
+        date
+      ) /
+      1000
     );
 
-  if(seconds < 60)
-    return "à l'instant";
 
-  const minutes =
-    Math.floor(
-      seconds / 60
+  if (diff < 60)
+    return "À l'instant";
+
+
+  if (diff < 3600)
+    return (
+      Math.floor(
+        diff / 60
+      ) +
+      " min"
     );
 
-  if(minutes < 60)
-    return `il y a ${minutes} min`;
 
-  const hours =
-    Math.floor(
-      minutes / 60
+  if (diff < 86400)
+    return (
+      Math.floor(
+        diff / 3600
+      ) +
+      " h"
     );
 
-  if(hours < 24)
-    return `il y a ${hours} h`;
 
-  const days =
-    Math.floor(
-      hours / 24
-    );
+  return date.toLocaleDateString(
+    "fr-FR",
+    {
+      day:
+        "2-digit",
 
-  return `il y a ${days} j`;
+      month:
+        "short",
+
+      year:
+        "numeric"
+    }
+  );
 
 }
 
 
 // ======================================================
-// MATH BACKGROUND
+// PROTECTION HTML
 // ======================================================
 
-function startMathBackground(){
+function escapeHTML(
+  value
+) {
+
+  return String(
+    value
+  )
+
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+
+    .replace(
+      /</g,
+      "&lt;"
+    )
+
+    .replace(
+      />/g,
+      "&gt;"
+    )
+
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+
+    .replace(
+      /'/g,
+      "&#039;"
+    );
+
+}
+
+
+// ======================================================
+// FIL VIDE
+// ======================================================
+
+function createEmptyFeed() {
+
+  return `
+
+    <div class="empty-feed">
+
+      <div>
+        📰
+      </div>
+
+      <h3>
+        Le fil FISSA est prêt
+      </h3>
+
+      <p>
+        Sois le premier à publier
+        une comparaison.
+      </p>
+
+      <button
+        type="button"
+        onclick="openModal()"
+      >
+        ＋ Publier
+      </button>
+
+    </div>
+
+  `;
+
+}
+
+
+// ======================================================
+// CANVAS MATHÉMATIQUE
+// ======================================================
+
+function initializeMathBackground() {
 
   const canvas =
     document.getElementById(
       "mathCanvas"
     );
 
-  if(!canvas)
-    return;
+
+  if (!canvas) return;
+
 
   const ctx =
-    canvas.getContext("2d");
+    canvas.getContext(
+      "2d"
+    );
 
-  let particles = [];
+
+  let particles =
+    [];
 
 
-  function resize(){
+  function resize() {
 
     canvas.width =
       window.innerWidth;
@@ -2037,14 +2873,15 @@ function startMathBackground(){
     canvas.height =
       window.innerHeight;
 
+
     particles = [];
 
 
-    for(
-      let i=0;
-      i<55;
+    for (
+      let i = 0;
+      i < 70;
       i++
-    ){
+    ) {
 
       particles.push({
 
@@ -2069,8 +2906,9 @@ function startMathBackground(){
           ) * .35,
 
         r:
-          Math.random() * 1.8 + .5
-
+          Math.random() *
+          2 +
+          1
       });
 
     }
@@ -2078,7 +2916,7 @@ function startMathBackground(){
   }
 
 
-  function draw(){
+  function animate() {
 
     ctx.clearRect(
       0,
@@ -2089,24 +2927,37 @@ function startMathBackground(){
 
 
     particles.forEach(
-      (p,i) => {
+      (p, i) => {
 
-        p.x += p.vx;
-        p.y += p.vy;
+        p.x +=
+          p.vx;
+
+        p.y +=
+          p.vy;
 
 
-        if(
+        if (
           p.x < 0 ||
-          p.x > canvas.width
-        )
-          p.vx *= -1;
+          p.x >
+          canvas.width
+        ) {
+
+          p.vx *=
+            -1;
+
+        }
 
 
-        if(
+        if (
           p.y < 0 ||
-          p.y > canvas.height
-        )
-          p.vy *= -1;
+          p.y >
+          canvas.height
+        ) {
+
+          p.vy *=
+            -1;
+
+        }
 
 
         ctx.beginPath();
@@ -2116,38 +2967,50 @@ function startMathBackground(){
           p.y,
           p.r,
           0,
-          Math.PI*2
+          Math.PI * 2
         );
 
         ctx.fillStyle =
-          "rgba(0,229,255,.6)";
+          "rgba(69,199,255,.65)";
 
         ctx.fill();
 
 
-        for(
-          let j=i+1;
-          j<particles.length;
+        for (
+          let j =
+            i + 1;
+
+          j <
+            particles.length;
+
           j++
-        ){
+        ) {
 
           const q =
             particles[j];
 
+
           const dx =
-            p.x-q.x;
+            p.x -
+            q.x;
+
 
           const dy =
-            p.y-q.y;
+            p.y -
+            q.y;
+
 
           const distance =
             Math.sqrt(
-              dx*dx+
-              dy*dy
+              dx * dx +
+              dy * dy
             );
 
 
-          if(distance < 115){
+          if (
+            distance <
+            130
+          ) {
 
             ctx.beginPath();
 
@@ -2162,12 +3025,13 @@ function startMathBackground(){
             );
 
             ctx.strokeStyle =
-              `rgba(
-                0,
-                229,
-                255,
-                ${.1-distance/1300}
-              )`;
+              "rgba(69,199,255," +
+              (
+                .12 -
+                distance /
+                1300
+              ) +
+              ")";
 
             ctx.stroke();
 
@@ -2180,18 +3044,84 @@ function startMathBackground(){
 
 
     requestAnimationFrame(
-      draw
+      animate
     );
 
   }
 
+
+  resize();
 
   window.addEventListener(
     "resize",
     resize
   );
 
-  resize();
-  draw();
+  animate();
 
 }
+
+
+// ======================================================
+// FERMETURE MODALS
+// ======================================================
+
+document.addEventListener(
+  "click",
+  event => {
+
+    const modal =
+      document.getElementById(
+        "modal"
+      );
+
+    const authModal =
+      document.getElementById(
+        "authModal"
+      );
+
+
+    if (
+      modal &&
+      event.target === modal
+    ) {
+
+      closeModal();
+
+    }
+
+
+    if (
+      authModal &&
+      event.target === authModal
+    ) {
+
+      closeAuth();
+
+    }
+
+  }
+);
+
+
+// ======================================================
+// ESC POUR FERMER
+// ======================================================
+
+document.addEventListener(
+  "keydown",
+  event => {
+
+    if (
+      event.key ===
+      "Escape"
+    ) {
+
+      closeModal();
+
+      closeAuth();
+
+    }
+
+  }
+);
