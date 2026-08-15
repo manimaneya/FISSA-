@@ -2,16 +2,19 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
 
   <title>FISSA — Compare • Vote • Partage</title>
 
   <meta name="description"
-        content="FISSA, plateforme mondiale pour comparer, voter, publier et partager des créations.">
+        content="FISSA, plateforme mondiale pour comparer, publier, voter et partager des créations.">
 
   <meta name="theme-color" content="#07111f">
 
   <link rel="manifest" href="./manifest.json">
+
   <link rel="stylesheet" href="./style.css">
 </head>
 
@@ -23,36 +26,48 @@
 
 <header class="topbar">
 
-  <div class="brand" onclick="goHome()">
-    <div class="brand-logo">F</div>
-    <span>FISSA</span>
-  </div>
+  <div class="nav">
 
-  <div class="header-search">
-    <input id="searchInput"
-           type="search"
-           placeholder="Rechercher sur FISSA..."
-           oninput="searchPosts(this.value)">
-  </div>
-
-  <div class="header-actions">
-
-    <button class="icon-button"
-            onclick="showToast('Notifications bientôt disponibles 🔔')">
-      🔔
+    <button class="brand" onclick="goHome()">
+      <span class="brand-logo">F</span>
+      <span>FISSA</span>
     </button>
 
-    <button id="loginButton"
-            class="login-button"
-            onclick="openAuth('login')">
-      Connexion
-    </button>
+    <nav class="nav-menu">
 
-    <button id="userAvatar"
-            class="user-avatar hidden"
-            onclick="openProfile()">
-      U
-    </button>
+      <button onclick="goHome()">Accueil</button>
+
+      <button onclick="showPage('newsPage')">
+        Actualités
+      </button>
+
+      <button onclick="showPage('storiesPage')">
+        Stories
+      </button>
+
+      <button onclick="scrollToComparison()">
+        Comparer
+      </button>
+
+    </nav>
+
+    <div class="account">
+
+      <button
+        id="loginButton"
+        class="login-btn"
+        onclick="openAuth('login')">
+        Connexion
+      </button>
+
+      <button
+        id="userAvatar"
+        class="user-avatar hidden"
+        onclick="openProfile()">
+        U
+      </button>
+
+    </div>
 
   </div>
 
@@ -61,38 +76,43 @@
 
 <!-- ================= APP ================= -->
 
-<main id="app">
+<main>
 
   <!-- ================= HOME ================= -->
 
-  <section id="homePage">
+  <section id="homePage" class="page active-page">
 
     <section class="hero">
 
-      <div class="hero-badge">
+      <div class="badge">
         🌍 FISSA WORLD
       </div>
 
       <h1>
-        COMPARE.<br>
-        <span>VOTE. PARTAGE.</span>
+        COMPARE.
+        <span>VOTE.</span>
+        PARTAGE.
       </h1>
 
       <p>
-        Deux créations. Un choix.
-        <strong>Le public décide.</strong>
+        Une plateforme mondiale où les créateurs
+        présentent leurs vidéos et images,
+        le public vote entre A et B,
+        commente et partage.
       </p>
 
       <div class="hero-buttons">
 
-        <button class="primary-btn"
-                onclick="openPublish()">
+        <button
+          class="primary-btn"
+          onclick="openPublish()">
           ＋ Publier
         </button>
 
-        <button class="secondary-btn"
-                onclick="scrollToFeed()">
-          🔥 Découvrir
+        <button
+          class="secondary-btn"
+          onclick="scrollToComparison()">
+          ⚡ Comparer A / B
         </button>
 
       </div>
@@ -102,139 +122,487 @@
 
     <!-- ================= STORIES ================= -->
 
-    <section class="stories-section">
+    <section class="section">
 
-      <div class="section-heading">
-
-        <h2>Stories</h2>
-
-        <button onclick="showToast('Toutes les stories')">
-          Voir tout
-        </button>
-
-      </div>
-
-      <div id="stories" class="stories">
-
-        <div class="story create-story"
-             onclick="openPublish()">
-
-          <div class="story-circle">
-            ＋
-          </div>
-
-          <span>Créer</span>
-
-        </div>
-
-        <div class="story">
-          <div class="story-circle gradient-one">🎵</div>
-          <span>Music</span>
-        </div>
-
-        <div class="story">
-          <div class="story-circle gradient-two">😂</div>
-          <span>Comedy</span>
-        </div>
-
-        <div class="story">
-          <div class="story-circle gradient-three">⚽</div>
-          <span>Sport</span>
-        </div>
-
-        <div class="story">
-          <div class="story-circle gradient-four">🌍</div>
-          <span>Monde</span>
-        </div>
-
-        <div class="story">
-          <div class="story-circle gradient-five">🔬</div>
-          <span>Science</span>
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- ================= FILTRES ================= -->
-
-    <section class="filters-section">
-
-      <div class="filters">
-
-        <button class="filter active"
-                data-filter="all"
-                onclick="setFilter('all',this)">
-          🔥 Pour toi
-        </button>
-
-        <button class="filter"
-                data-filter="news"
-                onclick="setFilter('news',this)">
-          📰 Actualité
-        </button>
-
-        <button class="filter"
-                data-filter="music"
-                onclick="setFilter('music',this)">
-          🎵 Musique
-        </button>
-
-        <button class="filter"
-                data-filter="comedy"
-                onclick="setFilter('comedy',this)">
-          😂 Comedy
-        </button>
-
-        <button class="filter"
-                data-filter="sport"
-                onclick="setFilter('sport',this)">
-          ⚽ Sport
-        </button>
-
-        <button class="filter"
-                data-filter="world"
-                onclick="setFilter('world',this)">
-          🌍 Monde
-        </button>
-
-        <button class="filter"
-                data-filter="science"
-                onclick="setFilter('science',this)">
-          🔬 Science
-        </button>
-
-        <button class="filter"
-                data-filter="art"
-                onclick="setFilter('art',this)">
-          🎨 Art
-        </button>
-
-      </div>
-
-    </section>
-
-
-    <!-- ================= FEED ================= -->
-
-    <section id="feed"
-             class="feed-section">
-
-      <div class="feed-title">
+      <div class="section-title">
 
         <div>
-          <span class="live-dot"></span>
-          FIL D'ACTUALITÉ
+          <span class="mini-label">FISSA</span>
+          <h2>Stories</h2>
         </div>
 
-        <span id="postCount">0 publication</span>
+        <button onclick="showPage('storiesPage')">
+          Voir tout →
+        </button>
 
       </div>
 
-      <div id="feedList" class="feed-list"></div>
+      <div id="storiesPreview"
+           class="stories-row">
+
+        <button
+          class="story-add"
+          onclick="openPublish()">
+
+          <span>＋</span>
+
+          <small>
+            Ma Story
+          </small>
+
+        </button>
+
+      </div>
 
     </section>
+
+
+    <!-- ================= NEWS ================= -->
+
+    <section class="section">
+
+      <div class="section-title">
+
+        <div>
+          <span class="mini-label">LIVE</span>
+          <h2>Fil d'actualité</h2>
+        </div>
+
+        <button onclick="showPage('newsPage')">
+          Actualiser ↻
+        </button>
+
+      </div>
+
+      <div id="newsFeed"
+           class="news-feed">
+
+        <div class="loading">
+          Chargement des publications...
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ================= COMPARISON ================= -->
+
+    <section id="comparison"
+             class="section comparison-section">
+
+      <div class="section-title">
+
+        <div>
+          <span class="mini-label">DUEL</span>
+
+          <h2>
+            A ⚡ B
+          </h2>
+        </div>
+
+      </div>
+
+
+      <div class="comparison">
+
+        <!-- A -->
+
+        <article class="contestant card-a">
+
+          <div class="card-head">
+
+            <div class="member">
+
+              <div class="avatar avatar-a">
+                A
+              </div>
+
+              <div>
+                <strong>
+                  Création A
+                </strong>
+
+                <small>
+                  Participant
+                </small>
+              </div>
+
+            </div>
+
+            <b class="letter-a">
+              A
+            </b>
+
+          </div>
+
+
+          <div class="media-box">
+
+            <img
+              id="imageA"
+              alt="Création A">
+
+            <video
+              id="videoA"
+              playsinline
+              preload="metadata">
+            </video>
+
+            <button
+              id="playA"
+              class="play-button hidden"
+              onclick="toggleVideo('A')">
+              ▶
+            </button>
+
+            <button
+              id="soundA"
+              class="sound-button hidden"
+              onclick="toggleSound('A')">
+              🔊
+            </button>
+
+            <div
+              id="placeholderA"
+              class="media-empty">
+
+              <span>🎬</span>
+
+              <p>
+                Média A
+              </p>
+
+            </div>
+
+            <label class="upload-button">
+
+              📁 Ajouter A
+
+              <input
+                type="file"
+                accept="image/*,video/*"
+                hidden
+                onchange="loadMedia(event,'A')">
+
+            </label>
+
+          </div>
+
+
+          <div class="card-content">
+
+            <h3>
+              Création A
+            </h3>
+
+            <p>
+              Présente ton contenu et laisse
+              la communauté voter.
+            </p>
+
+          </div>
+
+
+          <div class="actions">
+
+            <button
+              onclick="vote('A',this)">
+              ❤️
+              <span id="likesA">0</span>
+            </button>
+
+            <button onclick="commentFor('A')">
+              💬
+            </button>
+
+            <button onclick="sharePost('A')">
+              ↗
+            </button>
+
+          </div>
+
+        </article>
+
+
+        <!-- VS -->
+
+        <div class="vs">
+
+          <div class="vs-circle">
+            VS
+          </div>
+
+          <div class="vs-line"></div>
+
+        </div>
+
+
+        <!-- B -->
+
+        <article class="contestant card-b">
+
+          <div class="card-head">
+
+            <div class="member">
+
+              <div class="avatar avatar-b">
+                B
+              </div>
+
+              <div>
+                <strong>
+                  Création B
+                </strong>
+
+                <small>
+                  Participant
+                </small>
+              </div>
+
+            </div>
+
+            <b class="letter-b">
+              B
+            </b>
+
+          </div>
+
+
+          <div class="media-box">
+
+            <img
+              id="imageB"
+              alt="Création B">
+
+            <video
+              id="videoB"
+              playsinline
+              preload="metadata">
+            </video>
+
+            <button
+              id="playB"
+              class="play-button hidden"
+              onclick="toggleVideo('B')">
+              ▶
+            </button>
+
+            <button
+              id="soundB"
+              class="sound-button hidden"
+              onclick="toggleSound('B')">
+              🔊
+            </button>
+
+            <div
+              id="placeholderB"
+              class="media-empty">
+
+              <span>🖼️</span>
+
+              <p>
+                Média B
+              </p>
+
+            </div>
+
+            <label class="upload-button">
+
+              📁 Ajouter B
+
+              <input
+                type="file"
+                accept="image/*,video/*"
+                hidden
+                onchange="loadMedia(event,'B')">
+
+            </label>
+
+          </div>
+
+
+          <div class="card-content">
+
+            <h3>
+              Création B
+            </h3>
+
+            <p>
+              Compare cette création avec A
+              et donne ton vote.
+            </p>
+
+          </div>
+
+
+          <div class="actions">
+
+            <button
+              onclick="vote('B',this)">
+              ❤️
+              <span id="likesB">0</span>
+            </button>
+
+            <button onclick="commentFor('B')">
+              💬
+            </button>
+
+            <button onclick="sharePost('B')">
+              ↗
+            </button>
+
+          </div>
+
+        </article>
+
+      </div>
+
+
+      <!-- SCORE -->
+
+      <div class="score-card">
+
+        <div class="score-numbers">
+
+          <span class="score-blue">
+            A <b id="percentA">50%</b>
+          </span>
+
+          <span class="score-red">
+            <b id="percentB">50%</b> B
+          </span>
+
+        </div>
+
+        <div class="score-bar">
+
+          <div id="scoreA"
+               class="score-a">
+          </div>
+
+          <div id="scoreB"
+               class="score-b">
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ================= COMMENTS ================= -->
+
+    <section class="section comments-section">
+
+      <div class="section-title">
+
+        <div>
+          <span class="mini-label">
+            COMMUNAUTÉ
+          </span>
+
+          <h2>
+            Discussion
+          </h2>
+        </div>
+
+      </div>
+
+
+      <form
+        class="comment-form"
+        onsubmit="addComment(event)">
+
+        <input
+          id="commentInput"
+          maxlength="250"
+          placeholder="Que penses-tu de A ou B ?"
+          required>
+
+        <button>
+          Envoyer
+        </button>
+
+      </form>
+
+
+      <div id="commentsList"
+           class="comments-list">
+
+      </div>
+
+    </section>
+
+  </section>
+
+
+  <!-- ================= NEWS PAGE ================= -->
+
+  <section id="newsPage"
+           class="page">
+
+    <button class="back-button"
+            onclick="goBack()">
+      ← Retour
+    </button>
+
+    <div class="page-header">
+
+      <span class="mini-label">
+        FISSA WORLD
+      </span>
+
+      <h1>
+        📰 Fil d'actualité
+      </h1>
+
+      <p>
+        Les publications les plus récentes
+        de la communauté.
+      </p>
+
+    </div>
+
+    <div id="fullNewsFeed"
+         class="news-feed">
+
+    </div>
+
+  </section>
+
+
+  <!-- ================= STORIES PAGE ================= -->
+
+  <section id="storiesPage"
+           class="page">
+
+    <button class="back-button"
+            onclick="goBack()">
+      ← Retour
+    </button>
+
+    <div class="page-header">
+
+      <span class="mini-label">
+        24H
+      </span>
+
+      <h1>
+        ✨ Stories FISSA
+      </h1>
+
+      <p>
+        Les moments rapides des membres.
+      </p>
+
+    </div>
+
+    <div id="storiesGrid"
+         class="stories-grid">
+
+    </div>
 
   </section>
 
@@ -242,54 +610,62 @@
   <!-- ================= PROFILE ================= -->
 
   <section id="profilePage"
-           class="page hidden">
+           class="page">
 
     <button class="back-button"
-            onclick="goHome()">
+            onclick="goBack()">
       ← Retour
     </button>
 
     <div class="profile-card">
 
-      <div id="profilePhoto"
-           class="profile-photo">
-        U
+      <div class="profile-photo">
+
+        <img
+          id="profilePhoto"
+          alt="Photo profil">
+
+        <span id="profileLetter">
+          U
+        </span>
+
       </div>
 
-      <button class="photo-button"
-              onclick="changeProfilePhoto()">
-        📷 Photo
-      </button>
-
-      <h2 id="profileName">
+      <h1 id="profileName">
         Utilisateur FISSA
-      </h2>
+      </h1>
 
       <p id="profileEmail">
         —
       </p>
 
-      <div class="profile-stats">
+      <div class="profile-stat">
 
         <div>
-          <strong id="profilePosts">0</strong>
-          <span>Publications</span>
+          <strong id="publicationCount">
+            0
+          </strong>
+
+          <span>
+            Publications
+          </span>
         </div>
 
         <div>
-          <strong id="profileVotes">0</strong>
-          <span>Votes</span>
-        </div>
+          <strong>
+            FISSA
+          </strong>
 
-        <div>
-          <strong id="profileLikes">0</strong>
-          <span>J'aime</span>
+          <span>
+            Membre
+          </span>
         </div>
 
       </div>
 
-      <button class="logout-button"
-              onclick="logout()">
+      <button
+        class="logout-btn"
+        onclick="logout()">
         🚪 Déconnexion
       </button>
 
@@ -305,136 +681,75 @@
 <div id="publishModal"
      class="modal">
 
-  <div class="modal-box publish-box">
+  <div class="modal-box">
 
     <button class="modal-close"
             onclick="closePublish()">
       ×
     </button>
 
-    <div class="modal-title">
-      <div class="mini-logo">F</div>
-      <div>
-        <h2>Nouvelle comparaison</h2>
-        <p>Publie ton A contre B</p>
-      </div>
+    <div class="modal-logo">
+      F
     </div>
 
+    <h2>
+      Créer une publication
+    </h2>
 
-    <input id="publishTitle"
-           class="input"
-           type="text"
-           maxlength="100"
-           placeholder="Titre de ta publication">
+    <p>
+      Publie une création pour la communauté FISSA.
+    </p>
 
+    <input
+      id="publishTitle"
+      placeholder="Titre de la publication"
+      maxlength="100">
 
-    <textarea id="publishDescription"
-              class="input textarea"
-              maxlength="500"
-              placeholder="Décris ta comparaison..."></textarea>
+    <textarea
+      id="publishText"
+      placeholder="Décris ta publication..."
+      maxlength="500">
+    </textarea>
 
+    <label class="file-picker">
 
-    <select id="publishCategory"
-            class="input">
+      📁 Ajouter une image ou vidéo
 
-      <option value="news">📰 Actualité</option>
-      <option value="music">🎵 Musique</option>
-      <option value="comedy">😂 Comedy</option>
-      <option value="sport">⚽ Sport</option>
-      <option value="world">🌍 Monde</option>
-      <option value="science">🔬 Science</option>
-      <option value="art">🎨 Art</option>
-
-    </select>
-
-
-    <div class="upload-grid">
-
-      <!-- A -->
-
-      <div class="upload-card">
-
-        <div class="upload-letter blue">
-          A
-        </div>
-
-        <h3>Média A</h3>
-
-        <div id="previewA"
-             class="upload-preview">
-          🎬
-        </div>
-
-        <label class="file-button">
-
-          📁 Choisir A
-
-          <input id="fileA"
-                 type="file"
-                 accept="image/*,video/*"
-                 hidden
-                 onchange="previewUpload('A',this)">
-
-        </label>
-
-      </div>
-
-
-      <!-- B -->
-
-      <div class="upload-card">
-
-        <div class="upload-letter red">
-          B
-        </div>
-
-        <h3>Média B</h3>
-
-        <div id="previewB"
-             class="upload-preview">
-          🎬
-        </div>
-
-        <label class="file-button">
-
-          📁 Choisir B
-
-          <input id="fileB"
-                 type="file"
-                 accept="image/*,video/*"
-                 hidden
-                 onchange="previewUpload('B',this)">
-
-        </label>
-
-      </div>
-
-    </div>
-
-
-    <label class="song-check">
-
-      <input id="songEnabled"
-             type="checkbox">
-
-      🎵 Ajouter le bouton Song
+      <input
+        id="publishFile"
+        type="file"
+        accept="image/*,video/*"
+        onchange="previewPublication(event)">
 
     </label>
 
+    <div id="publishPreview"
+         class="publish-preview">
+    </div>
 
-    <button class="publish-main-button"
-            onclick="publishComparison()">
+    <div class="modal-buttons">
 
-      🚀 PUBLIER SUR FISSA
+      <button
+        class="cancel-btn"
+        onclick="closePublish()">
+        Annuler
+      </button>
 
-    </button>
+      <button
+        id="publishButton"
+        class="primary-btn"
+        onclick="publishPost()">
+        🚀 Publier
+      </button>
+
+    </div>
 
   </div>
 
 </div>
 
 
-<!-- ================= AUTH ================= -->
+<!-- ================= AUTH MODAL ================= -->
 
 <div id="authModal"
      class="modal">
@@ -446,7 +761,7 @@
       ×
     </button>
 
-    <div class="mini-logo auth-logo">
+    <div class="modal-logo">
       F
     </div>
 
@@ -455,71 +770,37 @@
     </h2>
 
     <p>
-      Rejoins la communauté mondiale.
+      Rejoins la communauté FISSA.
     </p>
 
-    <input id="authName"
-           class="input hidden"
-           type="text"
-           placeholder="Ton nom">
+    <input
+      id="authName"
+      class="hidden"
+      placeholder="Ton nom">
 
-    <input id="authEmail"
-           class="input"
-           type="email"
-           placeholder="Adresse e-mail">
+    <input
+      id="authEmail"
+      type="email"
+      placeholder="Adresse e-mail">
 
-    <input id="authPassword"
-           class="input"
-           type="password"
-           placeholder="Mot de passe">
+    <input
+      id="authPassword"
+      type="password"
+      placeholder="Mot de passe">
 
-    <button class="publish-main-button"
-            onclick="submitAuth()">
+    <button
+      id="authSubmit"
+      class="primary-btn full"
+      onclick="submitAuth()">
       Se connecter
     </button>
 
-    <button id="switchAuth"
-            class="switch-button"
-            onclick="switchAuth()">
+    <button
+      id="switchAuth"
+      class="switch-auth"
+      onclick="switchAuth()">
       Créer un compte
     </button>
-
-  </div>
-
-</div>
-
-
-<!-- ================= COMMENT MODAL ================= -->
-
-<div id="commentModal"
-     class="modal">
-
-  <div class="modal-box">
-
-    <button class="modal-close"
-            onclick="closeComment()">
-      ×
-    </button>
-
-    <h2>💬 Commentaires</h2>
-
-    <div id="modalComments"
-         class="modal-comments"></div>
-
-    <form onsubmit="sendComment(event)">
-
-      <input id="modalCommentInput"
-             class="input"
-             maxlength="250"
-             placeholder="Ton commentaire..."
-             required>
-
-      <button class="publish-main-button"
-              type="submit">
-        Envoyer
-      </button>
-
-    </form>
 
   </div>
 
@@ -534,7 +815,8 @@
 
 
 <script type="module"
-        src="./script.js"></script>
+        src="./script.js">
+</script>
 
 </body>
 </html>
