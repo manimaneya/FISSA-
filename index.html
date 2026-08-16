@@ -128,7 +128,7 @@
           </div>
 
           <div class="actions">
-            <button onclick="vote('A',this)">❤️ <span id="likesA">0</span></button>
+            <button onclick="voteDuelUI('A',this)">❤️ <span id="likesA">0</span></button>
             <button onclick="commentFor('A')">💬</button>
             <button onclick="sharePost('A')">↗</button>
             <button class="ai-btn-small" onclick="analyzeMedia('A')">🤖</button>
@@ -175,7 +175,7 @@
           </div>
 
           <div class="actions">
-            <button onclick="vote('B',this)">❤️ <span id="likesB">0</span></button>
+            <button onclick="voteDuelUI('B',this)">❤️ <span id="likesB">0</span></button>
             <button onclick="commentFor('B')">💬</button>
             <button onclick="sharePost('B')">↗</button>
             <button class="ai-btn-small" onclick="analyzeMedia('B')">🤖</button>
@@ -209,7 +209,7 @@
         </div>
       </div>
 
-      <form class="comment-form" onsubmit="addComment(event)">
+      <form class="comment-form" onsubmit="addCommentUI(event)">
         <input id="commentInput" maxlength="250" placeholder="Que penses-tu de A ou B ?" required>
         <button>Envoyer</button>
       </form>
@@ -260,7 +260,7 @@
           <span>Membre</span>
         </div>
       </div>
-      <button class="logout-btn" onclick="logout()">🚪 Déconnexion</button>
+      <button class="logout-btn" onclick="logoutUI()">🚪 Déconnexion</button>
     </div>
   </section>
 
@@ -279,51 +279,4 @@
       📁 Ajouter une image ou vidéo
       <input id="publishFile" type="file" accept="image/*,video/*" onchange="previewPublication(event)">
     </label>
-    <div id="publishPreview" class="publish-preview"></div>
-    <div class="modal-buttons">
-      <button class="cancel-btn" onclick="closePublish()">Annuler</button>
-      <button id="publishButton" class="primary-btn" onclick="publishPost()">🚀 Publier</button>
-    </div>
-  </div>
-</div>
-
-<!-- ================= AUTH MODAL ================= -->
-<div id="authModal" class="modal">
-  <div class="modal-box auth-box">
-    <button class="modal-close" onclick="closeAuth()">×</button>
-    <div class="modal-logo">F</div>
-    <h2 id="authTitle">Connexion FISSA</h2>
-    <p>Rejoins la communauté FISSA.</p>
-    <input id="authName" class="hidden" placeholder="Ton nom">
-    <input id="authEmail" type="email" placeholder="Adresse e-mail">
-    <input id="authPassword" type="password" placeholder="Mot de passe">
-    <button id="authSubmit" class="primary-btn full" onclick="submitAuth()">Se connecter</button>
-    <button id="switchAuth" class="switch-auth" onclick="switchAuth()">Créer un compte</button>
-  </div>
-</div>
-
-<!-- ================= AI MODAL ================= -->
-<div id="aiModal" class="modal">
-  <div class="modal-box">
-    <button class="modal-close" onclick="closeAI()">×</button>
-    <div class="modal-logo">🤖</div>
-    <h2>Assistant IA FISSA</h2>
-    <p>Pose une question à l'IA ou analyse une création</p>
-    <textarea id="aiPrompt" placeholder="Demande à l'IA d'analyser, comparer ou suggérer..." maxlength="1000"></textarea>
-    <div class="modal-buttons">
-      <button class="cancel-btn" onclick="closeAI()">Fermer</button>
-      <button class="primary-btn" onclick="askAI()">🤖 Demander à l'IA</button>
-    </div>
-    <div id="aiResponse" class="ai-response hidden">
-      <h4>Réponse IA</h4>
-      <p id="aiResponseText"></p>
-    </div>
-  </div>
-</div>
-
-<!-- ================= TOAST ================= -->
-<div id="toast" class="toast"></div>
-
-<script type="module" src="./script.js"></script>
-</body>
-</html>
+    <div id="publishPreview" class="publish-preview"></div
