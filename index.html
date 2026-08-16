@@ -279,4 +279,51 @@
       📁 Ajouter une image ou vidéo
       <input id="publishFile" type="file" accept="image/*,video/*" onchange="previewPublication(event)">
     </label>
-    <div id="publishPreview" class="publish-preview"></div
+    <div id="publishPreview" class="publish-preview"></div>
+    <div class="modal-buttons">
+      <button class="cancel-btn" onclick="closePublish()">Annuler</button>
+      <button id="publishButton" class="primary-btn" onclick="publishPostUI()">🚀 Publier</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= AUTH MODAL ================= -->
+<div id="authModal" class="modal">
+  <div class="modal-box auth-box">
+    <button class="modal-close" onclick="closeAuth()">×</button>
+    <div class="modal-logo">F</div>
+    <h2 id="authTitle">Connexion FISSA</h2>
+    <p>Rejoins la communauté FISSA.</p>
+    <input id="authName" class="hidden" placeholder="Ton nom">
+    <input id="authEmail" type="email" placeholder="Adresse e-mail">
+    <input id="authPassword" type="password" placeholder="Mot de passe">
+    <button id="authSubmit" class="primary-btn full" onclick="submitAuthUI()">Se connecter</button>
+    <button id="switchAuth" class="switch-auth" onclick="switchAuthUI()">Créer un compte</button>
+  </div>
+</div>
+
+<!-- ================= AI MODAL ================= -->
+<div id="aiModal" class="modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeAI()">×</button>
+    <div class="modal-logo">🤖</div>
+    <h2>Assistant IA FISSA</h2>
+    <p>Pose une question à l'IA ou analyse une création</p>
+    <textarea id="aiPrompt" placeholder="Demande à l'IA d'analyser, comparer ou suggérer..." maxlength="1000"></textarea>
+    <div class="modal-buttons">
+      <button class="cancel-btn" onclick="closeAI()">Fermer</button>
+      <button class="primary-btn" onclick="askAI()">🤖 Demander à l'IA</button>
+    </div>
+    <div id="aiResponse" class="ai-response hidden">
+      <h4>Réponse IA</h4>
+      <p id="aiResponseText"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ================= TOAST ================= -->
+<div id="toast" class="toast"></div>
+
+<script type="module" src="./script.js"></script>
+</body>
+</html>
