@@ -1,6 +1,6 @@
 {
-  "short_name": "FISSA",
-  "name": "FISSA — Compare • Vote • Partage",
+  "short_name": "FISSA AI",
+  "name": "FISSA — Compare • Vote • Partage • AI",
   "icons": [
     {
       "src": "icon-192.png",
@@ -14,8 +14,9 @@
     }
   ],
   "start_url": "./index.html",
-  "background_color": "#07111f",
-  "theme_color": "#07111f",
+  "background_color": "#0a0a1a",
+  "theme_color": "#0a0a1a",
   "display": "standalone",
-  "orientation": "portrait"
+  "orientation": "portrait",
+  "description": "Plateforme de comparaison A/B avec intelligence artificielle"
 }
